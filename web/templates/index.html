@@ -400,11 +400,17 @@
                 <!-- 对话页面 -->
                 <div id="page-chat" class="page">
                     <div class="chat-page-layout">
-                        <!-- 历史对话侧边栏 -->
-                        <aside class="conversation-sidebar">
-                            <div class="sidebar-header">
-                                <button class="new-chat-btn" onclick="startNewConversation()">
+                        <!-- 历史对话侧边栏（可折叠，与主导航侧边栏类似） -->
+                        <aside class="conversation-sidebar" id="conversation-sidebar">
+                            <!-- 头部一行：折叠与「新对话」并排，避免绝对定位重叠（flex 为最佳实践） -->
+                            <div class="sidebar-header conversation-sidebar-header">
+                                <button type="button" class="new-chat-btn" onclick="startNewConversation()">
                                     <span>+</span> <span data-i18n="chat.newChat">新对话</span>
+                                </button>
+                                <button type="button" class="conversation-sidebar-collapse-btn" onclick="toggleConversationSidebar()" data-i18n="chat.toggleConversationPanel" data-i18n-attr="title" data-i18n-skip-text="true" title="折叠/展开对话列表" aria-label="折叠/展开对话列表">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                        <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                    </svg>
                                 </button>
                             </div>
                             <div class="sidebar-content">

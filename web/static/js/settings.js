@@ -1166,7 +1166,8 @@ async function loadExternalMCPs() {
         console.error('加载外部MCP列表失败:', error);
         const list = document.getElementById('external-mcp-list');
         if (list) {
-            list.innerHTML = `<div class="error">加载失败: ${escapeHtml(error.message)}</div>`;
+            const errT = typeof window.t === 'function' ? window.t : (k) => k;
+        list.innerHTML = `<div class="error">${escapeHtml(errT('mcp.loadExternalMCPFailed'))}: ${escapeHtml(error.message)}</div>`;
         }
     }
 }
@@ -1224,7 +1225,7 @@ function renderExternalMCPList(servers) {
             <div class="external-mcp-item">
                 <div class="external-mcp-item-header">
                     <div class="external-mcp-item-info">
-                        <h4>${transportIcon} ${escapeHtml(name)}${server.tool_count !== undefined && server.tool_count > 0 ? `<span class="tool-count-badge" title="工具数量">🔧 ${server.tool_count}</span>` : ''}</h4>
+                        <h4>${transportIcon} ${escapeHtml(name)}${server.tool_count !== undefined && server.tool_count > 0 ? `<span class="tool-count-badge" title="${escapeHtml(statusT('mcp.toolCount'))}">🔧 ${server.tool_count}</span>` : ''}</h4>
                         <span class="external-mcp-status ${statusClass}">${statusText}</span>
                     </div>
                     <div class="external-mcp-item-actions">
@@ -1234,7 +1235,7 @@ function renderExternalMCPList(servers) {
                             </button>` : 
                             status === 'connecting' ? 
                             `<button class="btn-small" id="btn-toggle-${escapeHtml(name)}" disabled style="opacity: 0.6; cursor: not-allowed;">
-                                ⏳ 连接中...
+                                ⏳ ${statusT('mcp.connecting')}
                             </button>` : ''}
                         <button class="btn-small" onclick="editExternalMCP('${escapeHtml(name)}')" title="${statusT('mcp.editConfig')}" ${status === 'connecting' ? 'disabled' : ''}>✏️ ${statusT('common.edit')}</button>
                         <button class="btn-small btn-danger" onclick="deleteExternalMCP('${escapeHtml(name)}')" title="${statusT('mcp.deleteConfig')}" ${status === 'connecting' ? 'disabled' : ''}>🗑 ${statusT('common.delete')}</button>
@@ -1242,7 +1243,7 @@ function renderExternalMCPList(servers) {
                 </div>
                 ${status === 'error' && server.error ? `
                 <div class="external-mcp-error" style="margin: 12px 0; padding: 12px; background: #fee; border-left: 3px solid #f44; border-radius: 4px; color: #c33; font-size: 0.875rem;">
-                    <strong>❌ 连接错误：</strong>${escapeHtml(server.error)}
+                    <strong>❌ ${statusT('mcp.connectionErrorLabel')}</strong>${escapeHtml(server.error)}
                 </div>` : ''}
                 <div class="external-mcp-item-details">
                     <div>
@@ -1252,7 +1253,7 @@ function renderExternalMCPList(servers) {
                     ${server.tool_count !== undefined && server.tool_count > 0 ? `
                     <div>
                         <strong>${statusT('mcp.toolCount')}</strong>
-                        <span style="font-weight: 600; color: var(--accent-color);">🔧 ${server.tool_count} 个工具</span>
+                        <span style="font-weight: 600; color: var(--accent-color);">${statusT('mcp.toolsCountValue', { count: server.tool_count })}</span>
                     </div>` : server.tool_count === 0 && status === 'connected' ? `
                     <div>
                         <strong>${statusT('mcp.toolCount')}</strong>
@@ -1266,7 +1267,7 @@ function renderExternalMCPList(servers) {
                     ${server.config.timeout ? `
                     <div>
                         <strong>${statusT('mcp.timeout')}</strong>
-                        <span>${server.config.timeout} 秒</span>
+                        <span>${server.config.timeout} ${statusT('mcp.secondsUnit')}</span>
                     </div>` : ''}
                     ${transport === 'stdio' && server.config.command ? `
                     <div>
@@ -1275,7 +1276,7 @@ function renderExternalMCPList(servers) {
                     </div>` : ''}
                     ${transport === 'http' && server.config.url ? `
                     <div>
-                        <strong>URL</strong>
+                        <strong>${statusT('mcp.urlLabel')}</strong>
                         <span style="font-family: monospace; font-size: 0.8125rem; word-break: break-all;">${escapeHtml(server.config.url)}</span>
                     </div>` : ''}
                 </div>
@@ -1327,7 +1328,7 @@ async function editExternalMCP(name) {
     try {
         const response = await apiFetch(`/api/external-mcp/${encodeURIComponent(name)}`);
         if (!response.ok) {
-            throw new Error('获取外部MCP配置失败');
+            throw new Error(typeof window.t === 'function' ? window.t('mcp.getConfigFailed') : '获取外部MCP配置失败');
         }
         
         const server = await response.json();
@@ -1742,3 +1743,20 @@ openSettings = async function() {
     await originalOpenSettings();
     await loadExternalMCPs();
 };
+
+// 语言切换后重新渲染 MCP 管理页中由 JS 写入的区块（innerHTML 不会随 data-i18n 自动更新）
+document.addEventListener('languagechange', function () {
+    try {
+        const mcpPage = document.getElementById('page-mcp-management');
+        if (mcpPage && mcpPage.classList.contains('active')) {
+            if (typeof loadExternalMCPs === 'function') {
+                loadExternalMCPs().catch(function () { /* ignore */ });
+            }
+            if (typeof updateToolsStats === 'function') {
+                updateToolsStats().catch(function () { /* ignore */ });
+            }
+        }
+    } catch (e) {
+        console.warn('languagechange MCP refresh failed', e);
+    }
+});

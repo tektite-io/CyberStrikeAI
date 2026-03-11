@@ -104,6 +104,7 @@
   },
   "chat": {
     "newChat": "New chat",
+    "toggleConversationPanel": "Collapse/expand conversation list",
     "searchHistory": "Search history...",
     "conversationGroups": "Conversation groups",
     "addGroup": "New group",
@@ -404,7 +405,12 @@
     "totalCount": "Total",
     "enabledCount": "Enabled",
     "disabledCount": "Disabled",
-    "connectedCount": "Connected"
+    "connectedCount": "Connected",
+    "toolsCountValue": "🔧 {{count}} tools",
+    "connectionErrorLabel": "Connection error:",
+    "secondsUnit": "s",
+    "urlLabel": "URL",
+    "loadExternalMCPFailed": "Load failed"
   },
   "settings": {
     "title": "System settings",

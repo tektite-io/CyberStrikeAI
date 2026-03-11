@@ -457,6 +457,104 @@ body {
     flex-shrink: 0;
     height: 100%;
     overflow: hidden;
+    position: relative;
+    transition: width 0.2s ease;
+}
+
+/* 对话页左侧列表折叠（腾出空间给主对话区） */
+.conversation-sidebar.collapsed {
+    width: 56px;
+}
+
+/* 对话列表头部：折叠 + 新对话同一行，不重叠 */
+.conversation-sidebar-header {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.conversation-sidebar-header .new-chat-btn {
+    flex: 1;
+    min-width: 0;
+    width: auto; /* 覆盖 .new-chat-btn 的 width:100%，让 flex 分配剩余空间 */
+}
+
+.conversation-sidebar-collapse-btn {
+    /* 不再使用 absolute，避免盖住「新对话」 */
+    position: static;
+    flex-shrink: 0;
+    align-self: center;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border-radius: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.conversation-sidebar-collapse-btn:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border-color: var(--accent-color);
+}
+
+/* 折叠后箭头朝右表示「展开」 */
+.conversation-sidebar.collapsed .conversation-sidebar-collapse-btn {
+    transform: rotate(180deg);
+}
+
+.conversation-sidebar-collapse-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+}
+
+.conversation-sidebar.collapsed .sidebar-content {
+    display: none;
+}
+
+.conversation-sidebar.collapsed .conversation-sidebar-header {
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 8px;
+    gap: 10px;
+    border-bottom: none;
+}
+
+.conversation-sidebar.collapsed .conversation-sidebar-collapse-btn {
+    order: 2;
+}
+
+.conversation-sidebar.collapsed .new-chat-btn {
+    order: 1; /* 窄条：先「+」再折叠，纵向排列 */
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    gap: 0;
+    flex: none;
+}
+
+/* 折叠时只保留「+」，隐藏「新对话」文案 */
+.conversation-sidebar.collapsed .new-chat-btn span:last-child {
+    display: none;
+}
+
+.conversation-sidebar.collapsed .new-chat-btn span:first-child {
+    font-size: 1.5em;
+    margin: 0;
 }
 
 header {
@@ -2592,6 +2690,11 @@ header {
         width: 240px;
         height: 100%;
         overflow: hidden;
+    }
+
+    /* 对话列表折叠态在窄屏下仍保持窄条，避免被 240px 覆盖 */
+    .conversation-sidebar.collapsed {
+        width: 56px;
     }
     
     .sidebar-content {

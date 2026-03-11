@@ -243,7 +243,8 @@ function initPage(pageId) {
             }
             break;
         case 'chat':
-            // 对话页面已由chat.js初始化
+            // 恢复对话列表折叠状态（从其他页返回时保持用户选择）
+            initConversationSidebarState();
             break;
         case 'info-collect':
             // 信息收集页面
@@ -421,11 +422,36 @@ function initSidebarState() {
             sidebar.classList.add('collapsed');
         }
     }
+    initConversationSidebarState();
+}
+
+// 切换对话页左侧列表折叠/展开
+function toggleConversationSidebar() {
+    const sidebar = document.getElementById('conversation-sidebar');
+    if (sidebar) {
+        sidebar.classList.toggle('collapsed');
+        const isCollapsed = sidebar.classList.contains('collapsed');
+        localStorage.setItem('conversationSidebarCollapsed', isCollapsed ? 'true' : 'false');
+    }
+}
+
+// 恢复对话列表折叠状态（进入对话页时生效）
+function initConversationSidebarState() {
+    const sidebar = document.getElementById('conversation-sidebar');
+    if (sidebar) {
+        const savedState = localStorage.getItem('conversationSidebarCollapsed');
+        if (savedState === 'true') {
+            sidebar.classList.add('collapsed');
+        } else {
+            sidebar.classList.remove('collapsed');
+        }
+    }
 }
 
 // 导出函数供其他脚本使用
 window.switchPage = switchPage;
 window.toggleSubmenu = toggleSubmenu;
 window.toggleSidebar = toggleSidebar;
+window.toggleConversationSidebar = toggleConversationSidebar;
 window.currentPage = function() { return currentPage; };
 

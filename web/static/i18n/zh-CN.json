@@ -104,6 +104,7 @@
   },
   "chat": {
     "newChat": "新对话",
+    "toggleConversationPanel": "折叠/展开对话列表",
     "searchHistory": "搜索历史记录...",
     "conversationGroups": "对话分组",
     "addGroup": "新建分组",
@@ -404,7 +405,12 @@
     "totalCount": "总数",
     "enabledCount": "已启用",
     "disabledCount": "已停用",
-    "connectedCount": "已连接"
+    "connectedCount": "已连接",
+    "toolsCountValue": "🔧 {{count}} 个工具",
+    "connectionErrorLabel": "连接错误：",
+    "secondsUnit": "秒",
+    "urlLabel": "URL",
+    "loadExternalMCPFailed": "加载失败"
   },
   "settings": {
     "title": "系统设置",
