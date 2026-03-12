@@ -5,7 +5,7 @@ args: ["-sT", "-sV", "-sC"]
 enabled: true
 short_description: "网络扫描：端口/服务/脚本；可选时序、自定义 NSE、OS 检测（需 root）"
 description: |
-  网络映射与端口扫描，合并了原「nmap」与「nmap-advanced」的能力。
+  网络映射与端口扫描。
 
   **默认行为（只传 target/ports 即可）：**
   - `-sT` TCP 连接扫描（无需 root）
