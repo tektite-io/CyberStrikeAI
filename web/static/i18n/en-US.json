@@ -1028,7 +1028,7 @@
     "title": "Terminal",
     "description": "Run commands on the server for ops and debugging. Commands run on the server; avoid sensitive or destructive operations.",
     "terminalTab": "Terminal {{n}}",
-    "close": "Close",
+    "close": "×",
     "newTerminal": "+"
   },
   "settingsSecurity": {
