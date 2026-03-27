@@ -31,33 +31,36 @@ CyberStrikeAI is an **AI-native security testing platform** built in Go. It inte
 <img src="./images/web-console.png" alt="Web Console" width="100%">
 </td>
 <td width="33.33%" align="center">
-<strong>Attack Chain Visualization</strong><br/>
-<img src="./images/attack-chain.png" alt="Attack Chain" width="100%">
-</td>
-<td width="33.33%" align="center">
 <strong>Task Management</strong><br/>
 <img src="./images/task-management.png" alt="Task Management" width="100%">
+</td>
+<td width="33.33%" align="center">
+<strong>Vulnerability Management</strong><br/>
+<img src="./images/vulnerability-management.png" alt="Vulnerability Management" width="100%">
 </td>
 </tr>
 <tr>
 <td width="33.33%" align="center">
-<strong>Vulnerability Management</strong><br/>
-<img src="./images/vulnerability-management.png" alt="Vulnerability Management" width="100%">
+<strong>WebShell Management</strong><br/>
+<img src="./images/webshell-management.png" alt="WebShell Management" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>MCP Management</strong><br/>
 <img src="./images/mcp-management.png" alt="MCP management" width="100%">
 </td>
-<td width="33.33%" align="center"></td>
-</tr>
-<tr>
 <td width="33.33%" align="center">
 <strong>Knowledge Base</strong><br/>
 <img src="./images/knowledge-base.png" alt="Knowledge Base" width="100%">
 </td>
+</tr>
+<tr>
 <td width="33.33%" align="center">
 <strong>Skills Management</strong><br/>
 <img src="./images/skills.png" alt="Skills Management" width="100%">
+</td>
+<td width="33.33%" align="center">
+<strong>Agent Management</strong><br/>
+<img src="./images/agent-management.png" alt="Agent Management" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>Role Management</strong><br/>
@@ -66,8 +69,8 @@ CyberStrikeAI is an **AI-native security testing platform** built in Go. It inte
 </tr>
 <tr>
 <td width="33.33%" align="center">
-<strong>WebShell Management</strong><br/>
-<img src="./images/webshell-management.png" alt="WebShell Management" width="100%">
+<strong>System Settings</strong><br/>
+<img src="./images/settings.png" alt="System settings" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>MCP stdio Mode</strong><br/>

@@ -30,33 +30,36 @@ CyberStrikeAI 是一款 **AI 原生安全测试平台**，基于 Go 构建，集
 <img src="./images/web-console.png" alt="Web 控制台" width="100%">
 </td>
 <td width="33.33%" align="center">
-<strong>攻击链可视化</strong><br/>
-<img src="./images/attack-chain.png" alt="攻击链" width="100%">
-</td>
-<td width="33.33%" align="center">
 <strong>任务管理</strong><br/>
 <img src="./images/task-management.png" alt="任务管理" width="100%">
+</td>
+<td width="33.33%" align="center">
+<strong>漏洞管理</strong><br/>
+<img src="./images/vulnerability-management.png" alt="漏洞管理" width="100%">
 </td>
 </tr>
 <tr>
 <td width="33.33%" align="center">
-<strong>漏洞管理</strong><br/>
-<img src="./images/vulnerability-management.png" alt="漏洞管理" width="100%">
+<strong>WebShell 管理</strong><br/>
+<img src="./images/webshell-management.png" alt="WebShell 管理" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>MCP 管理</strong><br/>
 <img src="./images/mcp-management.png" alt="MCP 管理" width="100%">
 </td>
-<td width="33.33%" align="center"></td>
-</tr>
-<tr>
 <td width="33.33%" align="center">
 <strong>知识库</strong><br/>
 <img src="./images/knowledge-base.png" alt="知识库" width="100%">
 </td>
+</tr>
+<tr>
 <td width="33.33%" align="center">
 <strong>Skills 管理</strong><br/>
 <img src="./images/skills.png" alt="Skills 管理" width="100%">
+</td>
+<td width="33.33%" align="center">
+<strong>Agent 管理</strong><br/>
+<img src="./images/agent-management.png" alt="Agent 管理" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>角色管理</strong><br/>
@@ -65,8 +68,8 @@ CyberStrikeAI 是一款 **AI 原生安全测试平台**，基于 Go 构建，集
 </tr>
 <tr>
 <td width="33.33%" align="center">
-<strong>WebShell 管理</strong><br/>
-<img src="./images/webshell-management.png" alt="WebShell 管理" width="100%">
+<strong>系统设置</strong><br/>
+<img src="./images/settings.png" alt="系统设置" width="100%">
 </td>
 <td width="33.33%" align="center">
 <strong>MCP stdio 模式</strong><br/>
