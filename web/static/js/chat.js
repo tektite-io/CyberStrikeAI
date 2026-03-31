@@ -5529,7 +5529,8 @@ async function downloadConversationMarkdownFromContext(includeToolDetails = fals
     if (!convId) return;
 
     try {
-        const response = await apiFetch(`/api/conversations/${convId}`);
+        // 下载不影响页面性能：直接从后端一次性拉取全量过程详情
+        const response = await apiFetch(`/api/conversations/${convId}?include_process_details=1`);
         let conversation = null;
         try {
             conversation = await response.json();
