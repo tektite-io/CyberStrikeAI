@@ -1280,6 +1280,12 @@ async function showBatchQueueDetail(queueId) {
             </div>`;
         }
         
+        // 保存滚动位置，防止刷新时滚动条弹回顶部
+        const modalBody = content.closest('.modal-body');
+        const tasksList = content.querySelector('.batch-queue-tasks-list');
+        const savedModalBodyScrollTop = modalBody ? modalBody.scrollTop : 0;
+        const savedTasksListScrollTop = tasksList ? tasksList.scrollTop : 0;
+
         content.innerHTML = `
             <div class="batch-queue-detail-info">
                 ${queue.title ? `<div class="detail-item">
@@ -1338,8 +1344,17 @@ async function showBatchQueueDetail(queueId) {
             </div>
         `;
         
+        // 恢复滚动位置
+        if (savedModalBodyScrollTop > 0 && modalBody) {
+            modalBody.scrollTop = savedModalBodyScrollTop;
+        }
+        const newTasksList = content.querySelector('.batch-queue-tasks-list');
+        if (savedTasksListScrollTop > 0 && newTasksList) {
+            newTasksList.scrollTop = savedTasksListScrollTop;
+        }
+
         modal.style.display = 'block';
-        
+
         // 如果队列正在运行，自动刷新
         if (queue.status === 'running') {
             startBatchQueueRefresh(queueId);
