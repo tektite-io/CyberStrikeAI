@@ -1137,7 +1137,7 @@
                         <!-- 批量任务队列列表 -->
                         <div class="batch-queues-section" id="batch-queues-section" style="display: none;">
                             <!-- 筛选控件 -->
-                            <div class="batch-queues-filters tasks-filters">
+                            <div class="batch-queues-filters tasks-filters batch-queues-filters--compact">
                                 <label>
                                     <span data-i18n="tasksPage.statusFilter">状态筛选</span>
                                     <select id="batch-queues-status-filter" onchange="filterBatchQueues()">
@@ -1149,7 +1149,7 @@
                                         <option value="cancelled" data-i18n="tasksPage.statusCancelled">已取消</option>
                                     </select>
                                 </label>
-                                <label style="flex: 1; max-width: 300px;">
+                                <label class="batch-queues-filters__search">
                                     <span data-i18n="tasksPage.searchQueuePlaceholder">搜索队列ID、标题或创建时间</span>
                                     <input type="text" id="batch-queues-search" data-i18n="tasksPage.searchKeywordPlaceholder" data-i18n-attr="placeholder" placeholder="输入关键字搜索..." 
                                            oninput="filterBatchQueues()">

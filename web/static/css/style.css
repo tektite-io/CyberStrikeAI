@@ -8208,6 +8208,21 @@ header {
     .tasks-filters select {
         min-width: 100%;
     }
+
+    .batch-queues-filters.tasks-filters.batch-queues-filters--compact {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+
+    .batch-queues-filters.tasks-filters.batch-queues-filters--compact select {
+        min-width: 120px;
+        width: auto;
+    }
+
+    .batch-queues-filters__search {
+        flex: 1 1 100%;
+    }
     
     .tasks-batch-actions {
         flex-direction: column;
@@ -8258,8 +8273,10 @@ header {
 
 .batch-queues-board .batch-queues-list {
     margin-bottom: 0;
-    padding: 12px 16px;
+    padding: 14px 16px;
     box-sizing: border-box;
+    /* 与卡片底色区分，flex gap 才能被看见，避免「白贴白」连成一片 */
+    background: var(--bg-secondary);
 }
 
 .batch-queues-board #batch-queues-pagination {
@@ -8281,6 +8298,45 @@ header {
     margin-bottom: 12px;
 }
 
+/* 任务管理 · 筛选条：标签与控件同一行，降低占用高度 */
+.batch-queues-filters.tasks-filters.batch-queues-filters--compact {
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    gap: 10px 16px;
+    align-items: center;
+}
+
+.batch-queues-filters.tasks-filters.batch-queues-filters--compact label {
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
+}
+
+.batch-queues-filters.tasks-filters.batch-queues-filters--compact label > span {
+    flex-shrink: 0;
+    font-size: 0.8125rem;
+    max-width: 9em;
+    line-height: 1.25;
+}
+
+.batch-queues-filters.tasks-filters.batch-queues-filters--compact select {
+    min-width: 120px;
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+}
+
+.batch-queues-filters.tasks-filters.batch-queues-filters--compact input[type="text"] {
+    padding: 6px 10px;
+    font-size: 0.8125rem;
+    min-width: 0;
+}
+
+.batch-queues-filters__search {
+    flex: 1 1 220px;
+    min-width: 0;
+    max-width: none;
+}
+
 .batch-queues-header {
     display: flex;
     justify-content: space-between;
@@ -8299,15 +8355,15 @@ header {
 .batch-queues-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     margin-bottom: 28px;
 }
 
 .batch-queue-item {
     background: var(--bg-primary);
     border: 1px solid var(--border-color);
-    border-radius: 14px;
-    padding: 14px 16px;
+    border-radius: 12px;
+    padding: 11px 16px 12px;
     box-shadow: var(--shadow-sm);
     transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
     cursor: pointer;
@@ -8332,6 +8388,148 @@ header {
     flex-direction: column;
     gap: 10px;
     min-width: 0;
+}
+
+/* 任务管理 · 队列卡片：单行主网格 + 进度列内统计，降低高度 */
+.batch-queue-item__inner--grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(128px, auto) minmax(88px, 14%) 44px;
+    grid-template-rows: auto;
+    grid-template-areas: "lead cluster progress actions";
+    column-gap: 22px;
+    align-items: center;
+    gap: 0;
+}
+
+.batch-queue-item__lead {
+    grid-area: lead;
+    min-width: 0;
+}
+
+.batch-queue-item__title-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.batch-queue-item__role-icon {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    line-height: 1;
+    border-radius: 9px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.batch-queue-item__titles {
+    flex: 1;
+    min-width: 0;
+}
+
+.batch-queue-item__inner--grid .batch-queue-card-title {
+    font-size: 0.9375rem;
+    line-height: 1.3;
+}
+
+.batch-queue-item__cluster {
+    grid-area: cluster;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 10px;
+    text-align: right;
+    max-width: min(100%, 360px);
+    justify-self: end;
+}
+
+/* 状态徽章与百分比同一行，用 gap 明确分隔（避免视觉上「贴住」） */
+.batch-queue-item__status-inline {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px 20px;
+    max-width: 100%;
+    min-width: 0;
+}
+
+.batch-queue-item__progress-col {
+    grid-area: progress;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    align-self: center;
+}
+
+.batch-queue-item__actions-col {
+    grid-area: actions;
+    justify-self: end;
+    align-self: center;
+    padding-left: 6px;
+}
+
+.batch-queue-item__idline--lead {
+    display: block;
+    margin: 4px 0 0;
+    font-size: 0.6875rem;
+    color: var(--text-muted, var(--text-secondary));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.batch-queue-item__idline--lead code {
+    font-size: 0.65rem;
+}
+
+.batch-queue-item__inner--grid .batch-queue-item__config {
+    margin-top: 3px;
+    margin-bottom: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.batch-queue-item__inner--grid .batch-queue-item__sublabel {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.batch-queue-item__inner--grid .batch-queue-item__pct {
+    flex: 0 0 auto;
+    text-align: right;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
+.batch-queue-progress-bar--card-row {
+    height: 6px;
+}
+
+.batch-queue-item--no-actions .batch-queue-item__inner--grid {
+    grid-template-columns: minmax(0, 1fr) minmax(128px, auto) minmax(88px, 16%);
+    grid-template-areas: "lead cluster progress";
+}
+
+.batch-queue-item--no-actions .batch-queue-item__actions-col {
+    display: none;
 }
 
 .batch-queue-item__top {
@@ -9369,6 +9567,45 @@ header {
     .batch-queue-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .batch-queue-item__inner--grid {
+        grid-template-columns: 1fr auto;
+        grid-template-areas:
+            "lead actions"
+            "cluster cluster"
+            "progress progress";
+        row-gap: 8px;
+    }
+
+    .batch-queue-item--no-actions .batch-queue-item__inner--grid {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+            "lead"
+            "cluster"
+            "progress";
+    }
+
+    .batch-queue-item__cluster {
+        align-items: flex-start;
+        text-align: left;
+        max-width: none;
+        justify-self: stretch;
+    }
+
+    .batch-queue-item__status-inline {
+        justify-content: flex-start;
+        width: 100%;
+    }
+
+    .batch-queue-item__inner--grid .batch-queue-item__pct {
+        text-align: left;
+    }
+
+    .batch-queue-item__idline--lead {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
     }
 
     .batch-queue-item__top {

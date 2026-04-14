@@ -1133,34 +1133,34 @@ function renderBatchQueues() {
             ? `<h4 class="batch-queue-card-title">${escapeHtml(queue.title)}</h4>`
             : `<h4 class="batch-queue-card-title batch-queue-card-title--muted">${escapeHtml(_t('tasks.batchQueueUntitled'))}</h4>`;
         const doneCount = stats.completed + stats.failed + stats.cancelled;
-        const statsCompact = `<span class="batch-queue-statsline__item">${escapeHtml(_t('tasks.totalLabel'))}\u00a0${stats.total}</span><span class="batch-queue-statsline__sep">\u00b7</span><span class="batch-queue-statsline__item">${escapeHtml(_t('tasks.pendingLabel'))}\u00a0${stats.pending}</span><span class="batch-queue-statsline__sep">\u00b7</span><span class="batch-queue-statsline__item">${escapeHtml(_t('tasks.runningLabel'))}\u00a0${stats.running}</span><span class="batch-queue-statsline__sep">\u00b7</span><span class="batch-queue-statsline__item batch-queue-statsline__item--ok">${escapeHtml(_t('tasks.completedLabel'))}\u00a0${stats.completed}</span><span class="batch-queue-statsline__sep">\u00b7</span><span class="batch-queue-statsline__item batch-queue-statsline__item--err">${escapeHtml(_t('tasks.failedLabel'))}\u00a0${stats.failed}</span>${stats.cancelled > 0 ? `<span class="batch-queue-statsline__sep">\u00b7</span><span class="batch-queue-statsline__item">${escapeHtml(_t('tasks.cancelledLabel'))}\u00a0${stats.cancelled}</span>` : ''}`;
 
+        const noActionsClass = canDelete ? '' : ' batch-queue-item--no-actions';
         return `
-            <div class="batch-queue-item batch-queue-item--compact${cardMod}" data-queue-id="${queue.id}" onclick="showBatchQueueDetail('${queue.id}')">
-                <div class="batch-queue-item__inner">
-                    <div class="batch-queue-item__top">
-                        <div class="batch-queue-item__title-col">
-                            ${titleBlock}
-                            <p class="batch-queue-item__config">${configLine}${cronPausedNote}</p>
-                            <p class="batch-queue-item__idline"><code title="${escapeHtml(queue.id)}">${shortId}</code><span class="batch-queue-item__idsep">\u00b7</span><span>${escapeHtml(_t('tasks.createdTimeLabel'))}\u00a0${escapeHtml(new Date(queue.createdAt).toLocaleString())}</span></p>
+            <div class="batch-queue-item batch-queue-item--compact${cardMod}${noActionsClass}" data-queue-id="${queue.id}" onclick="showBatchQueueDetail('${queue.id}')">
+                <div class="batch-queue-item__inner batch-queue-item__inner--grid">
+                    <div class="batch-queue-item__lead">
+                        <div class="batch-queue-item__title-row">
+                            <span class="batch-queue-item__role-icon" aria-hidden="true">${escapeHtml(roleIcon)}</span>
+                            <div class="batch-queue-item__titles">${titleBlock}</div>
                         </div>
-                        <div class="batch-queue-item__top-actions" onclick="event.stopPropagation();">
-                            ${canDelete ? `<button type="button" class="batch-queue-icon-btn" onclick="deleteBatchQueueFromList('${queue.id}')" title="${escapeHtml(_t('tasks.deleteQueue'))}" aria-label="${escapeHtml(_t('tasks.deleteQueue'))}"><svg class="batch-queue-icon-btn__svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : ''}
-                        </div>
+                        <p class="batch-queue-item__config">${configLine}${cronPausedNote}</p>
+                        <p class="batch-queue-item__idline batch-queue-item__idline--lead"><code title="${escapeHtml(queue.id)}">${shortId}</code><span class="batch-queue-item__idsep">\u00b7</span><span>${escapeHtml(_t('tasks.createdTimeLabel'))}\u00a0${escapeHtml(new Date(queue.createdAt).toLocaleString())}</span></p>
                     </div>
-                    <div class="batch-queue-item__mid">
-                        <div class="batch-queue-item__mid-left">
+                    <div class="batch-queue-item__cluster">
+                        <div class="batch-queue-item__status-inline">
                             <span class="batch-queue-status ${pres.class}">${escapeHtml(pres.text)}</span>
-                            ${pres.sublabel ? `<span class="batch-queue-item__sublabel">${escapeHtml(pres.sublabel)}</span>` : ''}
-                        </div>
-                        <div class="batch-queue-item__mid-right">
-                            <div class="batch-queue-progress-bar batch-queue-progress-bar--card batch-queue-progress-bar--list">
-                                <div class="batch-queue-progress-fill${progressFillMod}" style="width: ${progress}%"></div>
-                            </div>
                             <span class="batch-queue-item__pct">${progress}%\u00a0<span class="batch-queue-item__pct-frac">(${doneCount}/${stats.total})</span></span>
                         </div>
+                        ${pres.sublabel ? `<span class="batch-queue-item__sublabel">${escapeHtml(pres.sublabel)}</span>` : ''}
                     </div>
-                    <div class="batch-queue-statsline" aria-label="${escapeHtml(_t('tasks.batchQueueTitle'))}">${statsCompact}</div>
+                    <div class="batch-queue-item__progress-col">
+                        <div class="batch-queue-progress-bar batch-queue-progress-bar--card batch-queue-progress-bar--list batch-queue-progress-bar--card-row">
+                            <div class="batch-queue-progress-fill${progressFillMod}" style="width: ${progress}%"></div>
+                        </div>
+                    </div>
+                    <div class="batch-queue-item__actions-col" onclick="event.stopPropagation();">
+                        ${canDelete ? `<button type="button" class="batch-queue-icon-btn" onclick="deleteBatchQueueFromList('${queue.id}')" title="${escapeHtml(_t('tasks.deleteQueue'))}" aria-label="${escapeHtml(_t('tasks.deleteQueue'))}"><svg class="batch-queue-icon-btn__svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>` : ''}
+                    </div>
                 </div>
             </div>
         `;
