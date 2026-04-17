@@ -1309,6 +1309,11 @@ async function showBatchQueueDetail(queueId) {
                     : _t('batchQueueDetailModal.startExecute');
             }
         }
+        const rerunBtn = document.getElementById('batch-queue-rerun-btn');
+        if (rerunBtn) {
+            // 已完成或已取消状态显示"重跑一轮"
+            rerunBtn.style.display = (queue.status === 'completed' || queue.status === 'cancelled') ? 'inline-block' : 'none';
+        }
         if (pauseBtn) {
             // running状态显示"暂停队列"
             pauseBtn.style.display = queue.status === 'running' ? 'inline-block' : 'none';
@@ -1376,41 +1381,10 @@ async function showBatchQueueDetail(queueId) {
                 ${showProgressNoteInModal ? `<p class="batch-queue-detail-hero__note">${escapeHtml(pres.progressNote)}</p>` : ''}
             </section>
             <section class="batch-queue-detail-kv">
-                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.queueTitle'))}</span><span class="bq-kv__v">${escapeHtml(queue.title || _t('tasks.batchQueueUntitled'))}${allowSubtaskMutation ? ` <button class="btn-secondary btn-small" onclick="showEditMetadataInline()" style="margin-left:8px;padding:1px 8px;font-size:12px;">${escapeHtml(_t('common.edit'))}</button>` : ''}</span></div>
-                <div class="bq-kv bq-kv--block" id="bq-edit-metadata-row" style="display:none;">
-                    <span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.editMetadata') || '编辑信息')}</span>
-                    <span class="bq-kv__v bq-kv__v--control">
-                        <label style="font-size:12px;margin-right:4px;">${escapeHtml(_t('batchQueueDetailModal.queueTitle'))}</label>
-                        <input type="text" id="bq-edit-title" value="${escapeHtml(queue.title || '')}" placeholder="${escapeHtml(_t('batchImportModal.queueTitleHint') || '')}" style="padding:4px 8px;border-radius:4px;border:1px solid #d0d0d0;font-size:13px;width:160px;" />
-                        <label style="font-size:12px;margin-left:12px;margin-right:4px;">${escapeHtml(_t('batchQueueDetailModal.role'))}</label>
-                        <select id="bq-edit-role" style="padding:4px 8px;border-radius:4px;border:1px solid #d0d0d0;font-size:13px;min-width:120px;max-width:200px;">
-                            <option value="">${escapeHtml(_t('batchImportModal.defaultRole'))}</option>
-                            ${(() => {
-                                const roles = (Array.isArray(loadedRoles) ? loadedRoles : []).filter(r => r.name !== '默认' && r.enabled !== false).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
-                                const currentInList = !queue.role || queue.role === '' || roles.some(r => r.name === queue.role);
-                                const orphan = !currentInList ? `<option value="${escapeHtml(queue.role)}" selected>${escapeHtml(queue.role)} (${escapeHtml(_t('batchQueueDetailModal.roleNotFound') || '已移除')})</option>` : '';
-                                return orphan + roles.map(r => `<option value="${escapeHtml(r.name)}" ${r.name === (queue.role || '') ? 'selected' : ''}>${escapeHtml(r.name)}</option>`).join('');
-                            })()}
-                        </select>
-                        <button class="btn-primary btn-small" onclick="saveEditMetadata()" style="margin-left:8px;padding:2px 12px;font-size:12px;">${escapeHtml(_t('common.save'))}</button>
-                        <button class="btn-secondary btn-small" onclick="hideEditMetadataInline()" style="margin-left:4px;padding:2px 12px;font-size:12px;">${escapeHtml(_t('common.cancel'))}</button>
-                    </span>
-                </div>
-                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.role'))}</span><span class="bq-kv__v">${roleLineVal}</span></div>
-                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchImportModal.agentMode'))}</span><span class="bq-kv__v">${escapeHtml(agentModeText)}</span></div>
-                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchImportModal.scheduleMode'))}</span><span class="bq-kv__v">${scheduleDetail}${allowSubtaskMutation ? ` <button class="btn-secondary btn-small" onclick="showEditScheduleInline()" style="margin-left:8px;padding:1px 8px;font-size:12px;">${escapeHtml(_t('batchQueueDetailModal.editSchedule'))}</button>` : ''}</span></div>
-                <div class="bq-kv bq-kv--block" id="bq-edit-schedule-row" style="display:none;">
-                    <span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.editScheduleTitle'))}</span>
-                    <span class="bq-kv__v bq-kv__v--control">
-                        <select id="bq-edit-schedule-mode" onchange="toggleEditScheduleCronInput()" style="padding:4px 8px;border-radius:4px;border:1px solid #d0d0d0;font-size:13px;">
-                            <option value="manual" ${queue.scheduleMode !== 'cron' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.scheduleModeManual'))}</option>
-                            <option value="cron" ${queue.scheduleMode === 'cron' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.scheduleModeCron'))}</option>
-                        </select>
-                        <input type="text" id="bq-edit-cron-expr" value="${escapeHtml(queue.cronExpr || '')}" placeholder="${_t('batchImportModal.cronExprPlaceholder', { interpolation: { escapeValue: false } })}" style="margin-left:8px;padding:4px 8px;border-radius:4px;border:1px solid #d0d0d0;font-size:13px;width:220px;${queue.scheduleMode !== 'cron' ? 'display:none;' : ''}" />
-                        <button class="btn-primary btn-small" onclick="saveEditSchedule()" style="margin-left:8px;padding:2px 12px;font-size:12px;">${escapeHtml(_t('common.save'))}</button>
-                        <button class="btn-secondary btn-small" onclick="hideEditScheduleInline()" style="margin-left:4px;padding:2px 12px;font-size:12px;">${escapeHtml(_t('common.cancel'))}</button>
-                    </span>
-                </div>
+                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.queueTitle'))}</span><span class="bq-kv__v" id="bq-title-val">${allowSubtaskMutation ? `<span class="bq-inline-editable" onclick="startInlineEditTitle()" title="${escapeHtml(_t('common.edit'))}">${escapeHtml(queue.title || _t('tasks.batchQueueUntitled'))}</span>` : escapeHtml(queue.title || _t('tasks.batchQueueUntitled'))}</span></div>
+                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.role'))}</span><span class="bq-kv__v" id="bq-role-val">${allowSubtaskMutation ? `<span class="bq-inline-editable" onclick="startInlineEditRole()" title="${escapeHtml(_t('common.edit'))}">${roleLineVal}</span>` : roleLineVal}</span></div>
+                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchImportModal.agentMode'))}</span><span class="bq-kv__v" id="bq-agentmode-val">${allowSubtaskMutation ? `<span class="bq-inline-editable" onclick="startInlineEditAgentMode()" title="${escapeHtml(_t('common.edit'))}">${escapeHtml(agentModeText)}</span>` : escapeHtml(agentModeText)}</span></div>
+                <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchImportModal.scheduleMode'))}</span><span class="bq-kv__v" id="bq-schedule-val">${allowSubtaskMutation ? `<span class="bq-inline-editable" onclick="startInlineEditSchedule()" title="${escapeHtml(_t('common.edit'))}">${scheduleDetail}</span>` : scheduleDetail}</span></div>
                 <div class="bq-kv"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.taskTotal'))}</span><span class="bq-kv__v">${queue.tasks.length}</span></div>
                 ${queue.scheduleMode === 'cron' ? `<div class="bq-kv bq-kv--block"><span class="bq-kv__k">${escapeHtml(_t('batchQueueDetailModal.scheduleCronAuto'))}</span><span class="bq-kv__v bq-kv__v--control"><label class="bq-cron-toggle"><input type="checkbox" ${queue.scheduleEnabled !== false ? 'checked' : ''} onchange="updateBatchQueueScheduleEnabled(this.checked)" /><span class="bq-cron-toggle__hint">${escapeHtml(_t('batchQueueDetailModal.scheduleCronAutoHint'))}</span></label></span></div>` : ''}
             </section>
@@ -1555,6 +1529,36 @@ async function pauseBatchQueue() {
     }
 }
 
+// 重跑批量任务队列
+async function rerunBatchQueue() {
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) return;
+
+    if (!confirm(_t('tasks.rerunQueueConfirm'))) {
+        return;
+    }
+    const btn = document.getElementById('batch-queue-rerun-btn');
+    if (btn) { btn.disabled = true; }
+    try {
+        const response = await apiFetch(`/api/batch-tasks/${queueId}/rerun`, {
+            method: 'POST',
+        });
+
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || _t('tasks.rerunQueueFailed'));
+        }
+
+        showBatchQueueDetail(queueId);
+        refreshBatchQueues();
+    } catch (error) {
+        console.error('重跑批量任务失败:', error);
+        alert(_t('tasks.rerunQueueFailed') + ': ' + error.message);
+    } finally {
+        if (btn) { btn.disabled = false; }
+    }
+}
+
 // 删除批量任务队列（从详情模态框）
 async function deleteBatchQueue() {
     const queueId = batchQueuesState.currentQueueId;
@@ -1633,15 +1637,14 @@ function startBatchQueueRefresh(queueId) {
     }
 
     batchQueuesState.refreshInterval = setInterval(() => {
-        // 如果编辑或添加任务的模态框正在打开，跳过本次刷新防止丢失编辑内容
-        const editModal = document.getElementById('edit-batch-task-modal');
+        // 如果有内联编辑或添加任务模态框正在打开，跳过本次刷新防止丢失编辑内容
         const addModal = document.getElementById('add-batch-task-modal');
-        const editScheduleRow = document.getElementById('bq-edit-schedule-row');
-        const editMetadataRow = document.getElementById('bq-edit-metadata-row');
-        if ((editModal && editModal.style.display === 'block') ||
-            (addModal && addModal.style.display === 'block') ||
-            (editScheduleRow && editScheduleRow.style.display !== 'none') ||
-            (editMetadataRow && editMetadataRow.style.display !== 'none')) {
+        const content = document.getElementById('batch-queue-detail-content');
+        const hasInlineEdit = content && (
+            content.querySelector('.bq-inline-edit-controls') ||
+            content.querySelector('.batch-task-inline-edit')
+        );
+        if ((addModal && addModal.style.display === 'block') || hasInlineEdit) {
             return;
         }
         if (batchQueuesState.currentQueueId === queueId) {
@@ -1678,157 +1681,96 @@ function viewBatchTaskConversation(conversationId) {
     window.location.hash = `chat?conversation=${conversationId}`;
 }
 
-// 编辑批量任务的状态
-const editBatchTaskState = {
-    queueId: null,
-    taskId: null,
-    _escHandler: null,
-    _saveHandler: null
-};
-
-// 从元素获取任务信息并打开编辑模态框
+// --- 内联编辑：任务消息 ---
+// 从元素获取任务信息并启动内联编辑
 function editBatchTaskFromElement(button) {
     const taskItem = button.closest('.batch-task-item');
-    if (!taskItem) {
-        console.error('无法找到任务项元素');
-        return;
-    }
-    
+    if (!taskItem) return;
+
     const queueId = taskItem.getAttribute('data-queue-id');
     const taskId = taskItem.getAttribute('data-task-id');
     const taskMessage = taskItem.getAttribute('data-task-message');
-    
-    if (!queueId || !taskId) {
-        console.error('任务信息不完整');
-        return;
-    }
-    
+    if (!queueId || !taskId) return;
+
     // 解码HTML实体
     const decodedMessage = taskMessage
         .replace(/&#39;/g, "'")
         .replace(/&quot;/g, '"')
         .replace(/\\n/g, '\n');
-    
-    editBatchTask(queueId, taskId, decodedMessage);
+
+    // 找到 .batch-task-message 和 header 中的按钮
+    const msgSpan = taskItem.querySelector('.batch-task-message');
+    const header = taskItem.querySelector('.batch-task-header');
+    if (!msgSpan || !header) return;
+
+    // 隐藏编辑/删除按钮
+    header.querySelectorAll('.batch-task-edit-btn, .batch-task-delete-btn').forEach(b => b.style.display = 'none');
+
+    // 替换消息为内联编辑区域
+    const editDiv = document.createElement('div');
+    editDiv.className = 'batch-task-inline-edit';
+    editDiv.innerHTML = `<textarea id="bq-task-edit-${escapeHtml(taskId)}">${escapeHtml(decodedMessage)}</textarea>`;
+    msgSpan.style.display = 'none';
+    msgSpan.parentNode.insertBefore(editDiv, msgSpan.nextSibling);
+
+    const textarea = editDiv.querySelector('textarea');
+    if (textarea) {
+        let taskCancelled = false;
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+        textarea.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                taskCancelled = true;
+                cancelInlineTask();
+            }
+        });
+        textarea.addEventListener('blur', () => {
+            if (!taskCancelled) saveInlineTask(queueId, taskId);
+        });
+    }
 }
 
-// 打开编辑批量任务模态框
-function editBatchTask(queueId, taskId, currentMessage) {
-    editBatchTaskState.queueId = queueId;
-    editBatchTaskState.taskId = taskId;
-    
-    const modal = document.getElementById('edit-batch-task-modal');
-    const messageInput = document.getElementById('edit-task-message');
-    
-    if (!modal || !messageInput) {
-        console.error('编辑任务模态框元素不存在');
-        return;
-    }
-    
-    messageInput.value = currentMessage;
-    modal.style.display = 'block';
-    
-    // 聚焦到输入框
-    setTimeout(() => {
-        messageInput.focus();
-        messageInput.select();
-    }, 100);
-    
-    // 清理旧的事件监听器（防止泄漏）
-    if (editBatchTaskState._escHandler) {
-        document.removeEventListener('keydown', editBatchTaskState._escHandler);
-    }
-    if (editBatchTaskState._saveHandler) {
-        messageInput.removeEventListener('keydown', editBatchTaskState._saveHandler);
-    }
-
-    // 添加ESC键监听
-    editBatchTaskState._escHandler = (e) => {
-        if (e.key === 'Escape') {
-            closeEditBatchTaskModal();
-        }
-    };
-    document.addEventListener('keydown', editBatchTaskState._escHandler);
-
-    // 添加Enter+Ctrl/Cmd保存功能
-    editBatchTaskState._saveHandler = (e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            saveBatchTask();
-        }
-    };
-    messageInput.addEventListener('keydown', editBatchTaskState._saveHandler);
+function cancelInlineTask() {
+    // 刷新整个详情来还原
+    const queueId = batchQueuesState.currentQueueId;
+    if (queueId) showBatchQueueDetail(queueId);
 }
 
-// 关闭编辑批量任务模态框
-function closeEditBatchTaskModal() {
-    const modal = document.getElementById('edit-batch-task-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
-    // 清理事件监听器
-    if (editBatchTaskState._escHandler) {
-        document.removeEventListener('keydown', editBatchTaskState._escHandler);
-        editBatchTaskState._escHandler = null;
-    }
-    if (editBatchTaskState._saveHandler) {
-        const messageInput = document.getElementById('edit-task-message');
-        if (messageInput) {
-            messageInput.removeEventListener('keydown', editBatchTaskState._saveHandler);
-        }
-        editBatchTaskState._saveHandler = null;
-    }
-    editBatchTaskState.queueId = null;
-    editBatchTaskState.taskId = null;
-}
+async function saveInlineTask(queueId, taskId) {
+    if (_bqInlineSaving) return;
+    _bqInlineSaving = true;
+    const textarea = document.getElementById(`bq-task-edit-${taskId}`);
+    if (!textarea) { _bqInlineSaving = false; return; }
 
-// 保存批量任务
-async function saveBatchTask() {
-    const queueId = editBatchTaskState.queueId;
-    const taskId = editBatchTaskState.taskId;
-    const messageInput = document.getElementById('edit-task-message');
-    
-    if (!queueId || !taskId) {
-        alert(_t('tasks.taskIncomplete'));
-        return;
-    }
-    
-    if (!messageInput) {
-        alert(_t('tasks.cannotGetTaskMessageInput'));
-        return;
-    }
-    
-    const message = messageInput.value.trim();
+    const message = textarea.value.trim();
     if (!message) {
+        _bqInlineSaving = false;
         alert(_t('tasks.taskMessageRequired'));
         return;
     }
-    
+
     try {
         const response = await apiFetch(`/api/batch-tasks/${queueId}/tasks/${taskId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ message: message }),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message }),
         });
-        
+
         if (!response.ok) {
             const result = await response.json().catch(() => ({}));
             throw new Error(result.error || _t('tasks.updateTaskFailed'));
         }
-        
-        // 关闭编辑模态框
-        closeEditBatchTaskModal();
-        
+
+        _bqInlineSaving = false;
         // 刷新队列详情
         if (batchQueuesState.currentQueueId === queueId) {
             showBatchQueueDetail(queueId);
         }
-        
+
         // 刷新队列列表
         refreshBatchQueues();
     } catch (error) {
+        _bqInlineSaving = false;
         console.error('保存任务失败:', error);
         alert(_t('tasks.saveTaskFailed') + ': ' + error.message);
     }
@@ -2046,26 +1988,54 @@ async function updateBatchQueueScheduleEnabled(enabled) {
     }
 }
 
-// --- 元数据（标题/角色）内联编辑 ---
-function showEditMetadataInline() {
-    // 关闭调度编辑行（互斥）
-    const schedRow = document.getElementById('bq-edit-schedule-row');
-    if (schedRow) schedRow.style.display = 'none';
-    const row = document.getElementById('bq-edit-metadata-row');
-    if (row) row.style.display = '';
+// --- 内联编辑：取消所有正在编辑的内联区域 ---
+function cancelAllInlineEdits() {
+    _bqInlineSaving = true; // 防止 blur 触发保存
+    const queueId = batchQueuesState.currentQueueId;
+    if (queueId) showBatchQueueDetail(queueId);
+    _bqInlineSaving = false;
 }
-function hideEditMetadataInline() {
-    const row = document.getElementById('bq-edit-metadata-row');
-    if (row) row.style.display = 'none';
-}
-async function saveEditMetadata() {
+
+// --- 内联编辑：标题 ---
+let _bqInlineSaving = false;
+function startInlineEditTitle() {
+    const container = document.getElementById('bq-title-val');
+    if (!container) return;
     const queueId = batchQueuesState.currentQueueId;
     if (!queueId) return;
-    const titleInput = document.getElementById('bq-edit-title');
-    const roleInput = document.getElementById('bq-edit-role');
-    const title = titleInput ? titleInput.value.trim() : '';
-    const role = roleInput ? roleInput.value.trim() : '';
+    const currentTitle = (container.querySelector('.bq-inline-editable') || container).textContent.trim();
+    const untitledText = _t('tasks.batchQueueUntitled');
+    const val = currentTitle === untitledText ? '' : currentTitle;
+    container.innerHTML = `<span class="bq-inline-edit-controls">
+        <input type="text" id="bq-edit-title" value="${escapeHtml(val)}" placeholder="${escapeHtml(_t('batchImportModal.queueTitleHint') || '')}" style="width:180px;" />
+    </span>`;
+    const inp = document.getElementById('bq-edit-title');
+    if (inp) {
+        inp.focus();
+        inp.select();
+        let cancelled = false;
+        inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); inp.blur(); }
+            if (e.key === 'Escape') { cancelled = true; cancelAllInlineEdits(); }
+        });
+        inp.addEventListener('blur', () => {
+            if (cancelled) return;
+            saveInlineTitle();
+        });
+    }
+}
+async function saveInlineTitle() {
+    if (_bqInlineSaving) return;
+    _bqInlineSaving = true;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) { _bqInlineSaving = false; return; }
+    const inp = document.getElementById('bq-edit-title');
+    const title = inp ? inp.value.trim() : '';
     try {
+        // 获取当前角色（保持不变）
+        const detailResp = await apiFetch(`/api/batch-tasks/${queueId}`);
+        const detail = await detailResp.json();
+        const role = detail.queue ? (detail.queue.role || '') : '';
         const response = await apiFetch(`/api/batch-tasks/${queueId}/metadata`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -2075,9 +2045,131 @@ async function saveEditMetadata() {
             const result = await response.json().catch(() => ({}));
             throw new Error(result.error || _t('tasks.updateTaskFailed'));
         }
+        _bqInlineSaving = false;
         showBatchQueueDetail(queueId);
         refreshBatchQueues();
     } catch (e) {
+        _bqInlineSaving = false;
+        console.error(e);
+        alert(e.message);
+    }
+}
+
+// --- 内联编辑：角色 ---
+function startInlineEditRole() {
+    const container = document.getElementById('bq-role-val');
+    if (!container) return;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) return;
+    // 获取当前详情中角色名 — 从 layout 的 data 中无法获取，故使用 API 拉取
+    apiFetch(`/api/batch-tasks/${queueId}`).then(r => r.json()).then(detail => {
+        const queue = detail.queue;
+        const currentRole = queue.role || '';
+        const roles = (Array.isArray(batchQueuesState.loadedRoles) ? batchQueuesState.loadedRoles : []).filter(r => r.name !== '默认' && r.enabled !== false).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'zh-CN'));
+        const currentInList = !currentRole || roles.some(r => r.name === currentRole);
+        const orphanOpt = !currentInList ? `<option value="${escapeHtml(currentRole)}" selected>${escapeHtml(currentRole)} (${escapeHtml(_t('batchQueueDetailModal.roleNotFound') || '已移除')})</option>` : '';
+        const opts = roles.map(r => `<option value="${escapeHtml(r.name)}" ${r.name === currentRole ? 'selected' : ''}>${escapeHtml(r.name)}</option>`).join('');
+        container.innerHTML = `<span class="bq-inline-edit-controls">
+            <select id="bq-edit-role">
+                <option value="">${escapeHtml(_t('batchImportModal.defaultRole'))}</option>
+                ${orphanOpt}${opts}
+            </select>
+        </span>`;
+        const sel = document.getElementById('bq-edit-role');
+        if (sel) {
+            sel.focus();
+            let cancelled = false;
+            sel.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { cancelled = true; cancelAllInlineEdits(); }
+            });
+            sel.addEventListener('change', () => { if (!cancelled) saveInlineRole(); });
+            sel.addEventListener('blur', () => { if (!cancelled) saveInlineRole(); });
+        }
+    });
+}
+async function saveInlineRole() {
+    if (_bqInlineSaving) return;
+    _bqInlineSaving = true;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) { _bqInlineSaving = false; return; }
+    const sel = document.getElementById('bq-edit-role');
+    const role = sel ? sel.value.trim() : '';
+    try {
+        const detailResp = await apiFetch(`/api/batch-tasks/${queueId}`);
+        const detail = await detailResp.json();
+        const title = detail.queue ? (detail.queue.title || '') : '';
+        const response = await apiFetch(`/api/batch-tasks/${queueId}/metadata`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, role }),
+        });
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || _t('tasks.updateTaskFailed'));
+        }
+        _bqInlineSaving = false;
+        showBatchQueueDetail(queueId);
+        refreshBatchQueues();
+    } catch (e) {
+        _bqInlineSaving = false;
+        console.error(e);
+        alert(e.message);
+    }
+}
+
+// --- 内联编辑：代理模式 ---
+function startInlineEditAgentMode() {
+    const container = document.getElementById('bq-agentmode-val');
+    if (!container) return;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) return;
+    apiFetch(`/api/batch-tasks/${queueId}`).then(r => r.json()).then(detail => {
+        const queue = detail.queue;
+        const currentMode = queue.agentMode || 'single';
+        container.innerHTML = `<span class="bq-inline-edit-controls">
+            <select id="bq-edit-agentmode">
+                <option value="single" ${currentMode !== 'multi' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.agentModeSingle'))}</option>
+                <option value="multi" ${currentMode === 'multi' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.agentModeMulti'))}</option>
+            </select>
+        </span>`;
+        const sel = document.getElementById('bq-edit-agentmode');
+        if (sel) {
+            sel.focus();
+            let cancelled = false;
+            sel.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') { cancelled = true; cancelAllInlineEdits(); }
+            });
+            sel.addEventListener('change', () => { if (!cancelled) saveInlineAgentMode(); });
+            sel.addEventListener('blur', () => { if (!cancelled) saveInlineAgentMode(); });
+        }
+    });
+}
+async function saveInlineAgentMode() {
+    if (_bqInlineSaving) return;
+    _bqInlineSaving = true;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) { _bqInlineSaving = false; return; }
+    const sel = document.getElementById('bq-edit-agentmode');
+    const agentMode = sel ? sel.value : 'single';
+    try {
+        const detailResp = await apiFetch(`/api/batch-tasks/${queueId}`);
+        const detail = await detailResp.json();
+        const title = detail.queue ? (detail.queue.title || '') : '';
+        const role = detail.queue ? (detail.queue.role || '') : '';
+        const response = await apiFetch(`/api/batch-tasks/${queueId}/metadata`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, role, agentMode }),
+        });
+        if (!response.ok) {
+            const result = await response.json().catch(() => ({}));
+            throw new Error(result.error || _t('tasks.updateTaskFailed'));
+        }
+        _bqInlineSaving = false;
+        showBatchQueueDetail(queueId);
+        refreshBatchQueues();
+    } catch (e) {
+        _bqInlineSaving = false;
         console.error(e);
         alert(e.message);
     }
@@ -2119,38 +2211,82 @@ async function retryBatchTask(queueId, taskId) {
     }
 }
 
-// --- 调度配置内联编辑 ---
-function showEditScheduleInline() {
-    // 关闭元数据编辑行（互斥）
-    const metaRow = document.getElementById('bq-edit-metadata-row');
-    if (metaRow) metaRow.style.display = 'none';
-    const row = document.getElementById('bq-edit-schedule-row');
-    if (row) row.style.display = '';
+// --- 内联编辑：调度配置 ---
+function startInlineEditSchedule() {
+    const container = document.getElementById('bq-schedule-val');
+    if (!container) return;
+    const queueId = batchQueuesState.currentQueueId;
+    if (!queueId) return;
+    apiFetch(`/api/batch-tasks/${queueId}`).then(r => r.json()).then(detail => {
+        const queue = detail.queue;
+        const isCron = queue.scheduleMode === 'cron';
+        container.innerHTML = `<span class="bq-inline-edit-controls">
+            <select id="bq-edit-schedule-mode" onchange="toggleInlineScheduleCron()">
+                <option value="manual" ${!isCron ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.scheduleModeManual'))}</option>
+                <option value="cron" ${isCron ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.scheduleModeCron'))}</option>
+            </select>
+            <input type="text" id="bq-edit-cron-expr" value="${escapeHtml(queue.cronExpr || '')}" placeholder="${_t('batchImportModal.cronExprPlaceholder', { interpolation: { escapeValue: false } })}" style="width:200px;${!isCron ? 'display:none;' : ''}" />
+        </span>`;
+        let schedCancelled = false;
+        const sel = document.getElementById('bq-edit-schedule-mode');
+        const cronInp = document.getElementById('bq-edit-cron-expr');
+        if (sel) {
+            sel.focus();
+            sel.addEventListener('keydown', (e) => { if (e.key === 'Escape') { schedCancelled = true; cancelAllInlineEdits(); } });
+            sel.addEventListener('change', () => {
+                toggleInlineScheduleCron();
+                // 切到 manual 时直接保存；切到 cron 时等用户输入表达式后 blur 保存
+                if (sel.value !== 'cron' && !schedCancelled) saveInlineSchedule();
+            });
+            sel.addEventListener('blur', (e) => {
+                // 如果焦点移到了 cron 输入框，不触发保存
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    if (active && (active.id === 'bq-edit-cron-expr' || active.id === 'bq-edit-schedule-mode')) return;
+                    if (!schedCancelled) saveInlineSchedule();
+                }, 100);
+            });
+        }
+        if (cronInp) {
+            cronInp.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') { e.preventDefault(); cronInp.blur(); }
+                if (e.key === 'Escape') { schedCancelled = true; cancelAllInlineEdits(); }
+            });
+            cronInp.addEventListener('blur', () => {
+                setTimeout(() => {
+                    const active = document.activeElement;
+                    if (active && (active.id === 'bq-edit-cron-expr' || active.id === 'bq-edit-schedule-mode')) return;
+                    if (!schedCancelled) saveInlineSchedule();
+                }, 100);
+            });
+        }
+    });
 }
-function hideEditScheduleInline() {
-    const row = document.getElementById('bq-edit-schedule-row');
-    if (row) row.style.display = 'none';
-}
-function toggleEditScheduleCronInput() {
+function toggleInlineScheduleCron() {
     const modeSelect = document.getElementById('bq-edit-schedule-mode');
     const cronInput = document.getElementById('bq-edit-cron-expr');
     if (modeSelect && cronInput) {
         cronInput.style.display = modeSelect.value === 'cron' ? '' : 'none';
+        if (modeSelect.value === 'cron') cronInput.focus();
     }
 }
-async function saveEditSchedule() {
+async function saveInlineSchedule() {
+    if (_bqInlineSaving) return;
+    _bqInlineSaving = true;
     const queueId = batchQueuesState.currentQueueId;
-    if (!queueId) return;
+    if (!queueId) { _bqInlineSaving = false; return; }
     const modeSelect = document.getElementById('bq-edit-schedule-mode');
     const cronInput = document.getElementById('bq-edit-cron-expr');
-    if (!modeSelect) return;
+    if (!modeSelect) { _bqInlineSaving = false; return; }
     const scheduleMode = modeSelect.value;
     const cronExpr = cronInput ? cronInput.value.trim() : '';
     if (scheduleMode === 'cron' && !cronExpr) {
+        _bqInlineSaving = false;
         alert(_t('batchImportModal.cronExprRequired'));
         return;
     }
     if (scheduleMode === 'cron' && !/^\S+\s+\S+\s+\S+\s+\S+\s+\S+$/.test(cronExpr)) {
+        _bqInlineSaving = false;
         alert(_t('batchImportModal.cronExprInvalid') || 'Cron 表达式格式错误，需要 5 段（分 时 日 月 周）');
         return;
     }
@@ -2164,9 +2300,11 @@ async function saveEditSchedule() {
             const result = await response.json().catch(() => ({}));
             throw new Error(result.error || _t('batchQueueDetailModal.editScheduleError'));
         }
+        _bqInlineSaving = false;
         showBatchQueueDetail(queueId);
         refreshBatchQueues();
     } catch (e) {
+        _bqInlineSaving = false;
         console.error(e);
         alert(_t('batchQueueDetailModal.editScheduleError') + ': ' + e.message);
     }
@@ -2179,14 +2317,14 @@ window.createBatchQueue = createBatchQueue;
 window.showBatchQueueDetail = showBatchQueueDetail;
 window.startBatchQueue = startBatchQueue;
 window.pauseBatchQueue = pauseBatchQueue;
+window.rerunBatchQueue = rerunBatchQueue;
 window.deleteBatchQueue = deleteBatchQueue;
 window.closeBatchQueueDetailModal = closeBatchQueueDetailModal;
 window.refreshBatchQueues = refreshBatchQueues;
 window.viewBatchTaskConversation = viewBatchTaskConversation;
-window.editBatchTask = editBatchTask;
 window.editBatchTaskFromElement = editBatchTaskFromElement;
-window.closeEditBatchTaskModal = closeEditBatchTaskModal;
-window.saveBatchTask = saveBatchTask;
+window.cancelInlineTask = cancelInlineTask;
+window.saveInlineTask = saveInlineTask;
 window.filterBatchQueues = filterBatchQueues;
 window.goBatchQueuesPage = goBatchQueuesPage;
 window.changeBatchQueuesPageSize = changeBatchQueuesPageSize;
@@ -2197,14 +2335,17 @@ window.deleteBatchTaskFromElement = deleteBatchTaskFromElement;
 window.deleteBatchQueueFromList = deleteBatchQueueFromList;
 window.handleBatchScheduleModeChange = handleBatchScheduleModeChange;
 window.updateBatchQueueScheduleEnabled = updateBatchQueueScheduleEnabled;
-window.showEditMetadataInline = showEditMetadataInline;
-window.hideEditMetadataInline = hideEditMetadataInline;
-window.saveEditMetadata = saveEditMetadata;
+window.cancelAllInlineEdits = cancelAllInlineEdits;
+window.startInlineEditTitle = startInlineEditTitle;
+window.saveInlineTitle = saveInlineTitle;
+window.startInlineEditRole = startInlineEditRole;
+window.saveInlineRole = saveInlineRole;
+window.startInlineEditAgentMode = startInlineEditAgentMode;
+window.saveInlineAgentMode = saveInlineAgentMode;
 window.retryBatchTask = retryBatchTask;
-window.showEditScheduleInline = showEditScheduleInline;
-window.hideEditScheduleInline = hideEditScheduleInline;
-window.toggleEditScheduleCronInput = toggleEditScheduleCronInput;
-window.saveEditSchedule = saveEditSchedule;
+window.startInlineEditSchedule = startInlineEditSchedule;
+window.toggleInlineScheduleCron = toggleInlineScheduleCron;
+window.saveInlineSchedule = saveInlineSchedule;
 
 // 语言切换后，列表/分页/详情弹窗由 JS 渲染的文案需用当前语言重绘（applyTranslations 不会处理 innerHTML 内容）
 document.addEventListener('languagechange', function () {

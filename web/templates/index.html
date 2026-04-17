@@ -2395,6 +2395,7 @@ version: 1.0.0<br>
                     <div class="modal-header-actions">
                         <button class="btn-secondary btn-small" id="batch-queue-add-task-btn" onclick="showAddBatchTaskModal()" style="display: none;" data-i18n="batchQueueDetailModal.addTask">添加任务</button>
                         <button class="btn-primary btn-small" id="batch-queue-start-btn" onclick="startBatchQueue()" style="display: none;" data-i18n="batchQueueDetailModal.startExecute">开始执行</button>
+                        <button class="btn-primary btn-small" id="batch-queue-rerun-btn" onclick="rerunBatchQueue()" style="display: none;" data-i18n="batchQueueDetailModal.rerunQueue">重跑一轮</button>
                         <button class="btn-secondary btn-small" id="batch-queue-pause-btn" onclick="pauseBatchQueue()" style="display: none;" data-i18n="batchQueueDetailModal.pauseQueue">暂停队列</button>
                         <button class="btn-secondary btn-small btn-danger" id="batch-queue-delete-btn" onclick="deleteBatchQueue()" style="display: none;" data-i18n="batchQueueDetailModal.deleteQueue">删除队列</button>
                     </div>
@@ -2403,26 +2404,6 @@ version: 1.0.0<br>
             </div>
             <div class="modal-body">
                 <div id="batch-queue-detail-content"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 编辑批量任务模态框 -->
-    <div id="edit-batch-task-modal" class="modal">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h2 data-i18n="editBatchTaskModal.title">编辑任务</h2>
-                <span class="modal-close" onclick="closeEditBatchTaskModal()">&times;</span>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label for="edit-task-message" data-i18n="editBatchTaskModal.taskMessage">任务消息</label>
-                    <textarea id="edit-task-message" class="form-control" rows="5" data-i18n="editBatchTaskModal.taskMessagePlaceholder" data-i18n-attr="placeholder" placeholder="请输入任务消息"></textarea>
-                </div>
-                <div class="form-actions">
-                    <button class="btn-primary" onclick="saveBatchTask()" data-i18n="common.save">保存</button>
-                    <button class="btn-secondary" onclick="closeEditBatchTaskModal()" data-i18n="common.cancel">取消</button>
-                </div>
             </div>
         </div>
     </div>

@@ -9138,6 +9138,77 @@ header {
     min-width: 0;
 }
 
+/* Inline editable value — hover hint */
+.bq-inline-editable {
+    cursor: pointer;
+    border-radius: 4px;
+    padding: 2px 6px;
+    margin: -2px -6px;
+    transition: background 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.bq-inline-editable:hover {
+    background: var(--bg-secondary);
+}
+.bq-inline-editable::after {
+    content: '\270E';
+    font-size: 11px;
+    color: var(--text-secondary);
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+.bq-inline-editable:hover::after {
+    opacity: 0.5;
+}
+
+/* Inline edit controls (replaces value in-place) */
+.bq-inline-edit-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.bq-inline-edit-controls input[type="text"],
+.bq-inline-edit-controls select {
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1.5px solid var(--accent-color);
+    font-size: 13px;
+    outline: none;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.bq-inline-edit-controls input[type="text"]:focus,
+.bq-inline-edit-controls select:focus {
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.15);
+}
+/* Task inline edit textarea */
+.batch-task-inline-edit {
+    flex: 1;
+    min-width: 0;
+}
+.batch-task-inline-edit textarea {
+    width: 100%;
+    min-height: 56px;
+    padding: 8px 10px;
+    border: 1.5px solid var(--accent-color);
+    border-radius: 6px;
+    font-size: 0.875rem;
+    resize: vertical;
+    font-family: inherit;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.batch-task-inline-edit textarea:focus {
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.15);
+}
 @media (max-width: 520px) {
     .bq-kv,
     .bq-kv--block {
