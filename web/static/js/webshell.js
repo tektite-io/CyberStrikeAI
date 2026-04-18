@@ -37,23 +37,33 @@ let webshellStreamingTypingId = 0;
 let webshellProbeStatusById = {};
 let webshellBatchProbeRunning = false;
 
-/** 与主对话页一致：multi_agent.enabled 且本地模式为 multi 时使用 /api/multi-agent/stream */
-function resolveWebshellAiStreamPath() {
+/** 与主对话页一致：Eino 模式走 /api/multi-agent/stream，body 带 orchestration */
+function resolveWebshellAiStreamRequest() {
     if (typeof apiFetch === 'undefined') {
-        return Promise.resolve('/api/agent-loop/stream');
+        return Promise.resolve({ path: '/api/agent-loop/stream', orchestration: null });
     }
     return apiFetch('/api/config').then(function (r) {
-        if (!r.ok) return '/api/agent-loop/stream';
+        if (!r.ok) return null;
         return r.json();
     }).then(function (cfg) {
-        if (!cfg || !cfg.multi_agent || !cfg.multi_agent.enabled) return '/api/agent-loop/stream';
-        var mode = localStorage.getItem('cyberstrike-chat-agent-mode');
-        if (mode !== 'single' && mode !== 'multi') {
-            mode = (cfg.multi_agent.default_mode === 'multi') ? 'multi' : 'single';
+        if (!cfg || !cfg.multi_agent || !cfg.multi_agent.enabled) {
+            return { path: '/api/agent-loop/stream', orchestration: null };
         }
-        return mode === 'multi' ? '/api/multi-agent/stream' : '/api/agent-loop/stream';
+        var norm = null;
+        if (typeof window.csaiChatAgentMode === 'object' && typeof window.csaiChatAgentMode.normalizeStored === 'function') {
+            norm = window.csaiChatAgentMode.normalizeStored(localStorage.getItem('cyberstrike-chat-agent-mode'), cfg);
+        } else {
+            var mode = localStorage.getItem('cyberstrike-chat-agent-mode');
+            if (mode === 'single') mode = 'react';
+            if (mode === 'multi') mode = 'deep';
+            norm = mode || 'react';
+        }
+        if (typeof window.csaiChatAgentMode === 'object' && typeof window.csaiChatAgentMode.isEino === 'function' && window.csaiChatAgentMode.isEino(norm)) {
+            return { path: '/api/multi-agent/stream', orchestration: norm };
+        }
+        return { path: '/api/agent-loop/stream', orchestration: null };
     }).catch(function () {
-        return '/api/agent-loop/stream';
+        return { path: '/api/agent-loop/stream', orchestration: null };
     });
 }
 
@@ -2428,8 +2438,11 @@ function runWebshellAiSend(conn, inputEl, sendBtn, messagesContainer) {
     var streamingTarget = '';  // 当前要打字显示的目标全文（用于打字机效果）
     var streamingTypingId = 0;  // 防重入，每次新 response 自增
 
-    resolveWebshellAiStreamPath().then(function (streamPath) {
-        return apiFetch(streamPath, {
+    resolveWebshellAiStreamRequest().then(function (info) {
+        if (info && info.orchestration) {
+            body.orchestration = info.orchestration;
+        }
+        return apiFetch(info.path, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)

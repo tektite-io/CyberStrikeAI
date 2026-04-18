@@ -25,7 +25,98 @@ function getTimeFormatOptions() {
 }
 
 // 将后端下发的进度文案转为当前语言的翻译（中英双向映射，切换语言后能跟上）
-function translateProgressMessage(message) {
+/** Plan-Execute：将 Eino 内部 agent 名本地化为进度条标题用语 */
+function translatePlanExecuteAgentName(name) {
+    const n = String(name || '').trim().toLowerCase();
+    if (n === 'planner') return typeof window.t === 'function' ? window.t('progress.peAgentPlanner') : '规划器';
+    if (n === 'executor') return typeof window.t === 'function' ? window.t('progress.peAgentExecutor') : '执行器';
+    if (n === 'replanner' || n === 'execute_replan' || n === 'plan_execute_replan') {
+        return typeof window.t === 'function' ? window.t('progress.peAgentReplanning') : '重规划';
+    }
+    return String(name || '').trim();
+}
+
+/** 从 Plan-Execute 模型返回的单层 JSON 中取面向用户的字符串（replanner 常用 response）。 */
+function pickPeJSONUserText(o) {
+    if (!o || typeof o !== 'object') {
+        return '';
+    }
+    const keys = ['response', 'answer', 'message', 'content', 'summary', 'output', 'text', 'result'];
+    for (let i = 0; i < keys.length; i++) {
+        const v = o[keys[i]];
+        if (typeof v === 'string') {
+            const s = v.trim();
+            if (s) {
+                return s;
+            }
+        }
+    }
+    return '';
+}
+
+/** 少数模型在 JSON 字符串里仍留下字面量 “\\n”；在已解出正文后再转成换行（不误伤 Windows 盘符时极少命中）。 */
+function normalizePeInlineEscapes(s) {
+    if (!s || s.indexOf('\\n') < 0) {
+        return s;
+    }
+    return s.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+}
+
+/**
+ * Plan-Execute 时间线正文：planner/replanner 的 {"steps":[...]} 转为列表；{"response":"..."} 解包为纯文本；
+ * executor 同样解包。流式片段非法 JSON 时保持原文。
+ */
+function formatTimelineStreamBody(raw, meta) {
+    if (!raw || !meta || meta.orchestration !== 'plan_execute') {
+        return raw;
+    }
+    const agent = String(meta.einoAgent || '').trim().toLowerCase();
+    const t = String(raw).trim();
+    if (t.length < 2 || t.charAt(0) !== '{') {
+        return raw;
+    }
+    try {
+        const o = JSON.parse(t);
+        if (agent === 'executor') {
+            const u = pickPeJSONUserText(o);
+            return u ? normalizePeInlineEscapes(u) : raw;
+        }
+        if (agent === 'planner' || agent === 'replanner' || agent === 'execute_replan' || agent === 'plan_execute_replan') {
+            if (o && Array.isArray(o.steps) && o.steps.length) {
+                return o.steps.map(function (s, i) {
+                    return (i + 1) + '. ' + String(s);
+                }).join('\n');
+            }
+            const u = pickPeJSONUserText(o);
+            if (u) {
+                return normalizePeInlineEscapes(u);
+            }
+        }
+    } catch (e) {
+        return raw;
+    }
+    return raw;
+}
+
+/** 时间线条目：Plan-Execute 主通道流式阶段标题（替代一律「规划中」） */
+function einoMainStreamPlanningTitle(responseData) {
+    const orch = responseData && responseData.orchestration;
+    const agent = responseData && responseData.einoAgent != null ? String(responseData.einoAgent).trim() : '';
+    const prefix = timelineAgentBracketPrefix(responseData);
+    if (orch === 'plan_execute' && agent) {
+        const a = agent.toLowerCase();
+        let key = 'chat.planExecuteStreamPhase';
+        if (a === 'planner') key = 'chat.planExecuteStreamPlanner';
+        else if (a === 'executor') key = 'chat.planExecuteStreamExecutor';
+        else if (a === 'replanner' || a === 'execute_replan' || a === 'plan_execute_replan') key = 'chat.planExecuteStreamReplanning';
+        const label = typeof window.t === 'function' ? window.t(key) : '输出';
+        return prefix + '📝 ' + label;
+    }
+    const plan = typeof window.t === 'function' ? window.t('chat.planning') : '规划中';
+    return prefix + '📝 ' + plan;
+}
+
+function translateProgressMessage(message, data) {
     if (!message || typeof message !== 'string') return message;
     if (typeof window.t !== 'function') return message;
     const trim = message.trim();
@@ -39,6 +130,7 @@ function translateProgressMessage(message) {
         '正在分析您的请求...': 'progress.analyzingRequestShort',
         '开始分析请求并制定测试策略': 'progress.analyzingRequestPlanning',
         '正在启动 Eino DeepAgent...': 'progress.startingEinoDeepAgent',
+        '正在启动 Eino 多代理...': 'progress.startingEinoMultiAgent',
         // 英文（与 en-US.json 一致，避免后端/缓存已是英文时无法随语言切换）
         'Calling AI model...': 'progress.callingAI',
         'Last iteration: generating summary and next steps...': 'progress.lastIterSummary',
@@ -47,13 +139,18 @@ function translateProgressMessage(message) {
         'Max iterations reached, generating summary...': 'progress.maxIterSummary',
         'Analyzing your request...': 'progress.analyzingRequestShort',
         'Analyzing your request and planning test strategy...': 'progress.analyzingRequestPlanning',
-        'Starting Eino DeepAgent...': 'progress.startingEinoDeepAgent'
+        'Starting Eino DeepAgent...': 'progress.startingEinoDeepAgent',
+        'Starting Eino multi-agent...': 'progress.startingEinoMultiAgent'
     };
     if (map[trim]) return window.t(map[trim]);
     const einoAgentRe = /^\[Eino\]\s*(.+)$/;
     const einoM = trim.match(einoAgentRe);
     if (einoM) {
-        return window.t('progress.einoAgent', { name: einoM[1] });
+        let disp = einoM[1];
+        if (data && data.orchestration === 'plan_execute') {
+            disp = translatePlanExecuteAgentName(disp);
+        }
+        return window.t('progress.einoAgent', { name: disp });
     }
     const callingToolPrefixCn = '正在调用工具: ';
     const callingToolPrefixEn = 'Calling tool: ';
@@ -69,6 +166,9 @@ function translateProgressMessage(message) {
 }
 if (typeof window !== 'undefined') {
     window.translateProgressMessage = translateProgressMessage;
+    window.translatePlanExecuteAgentName = translatePlanExecuteAgentName;
+    window.einoMainStreamPlanningTitle = einoMainStreamPlanningTitle;
+    window.formatTimelineStreamBody = formatTimelineStreamBody;
 }
 
 // 存储工具调用ID到DOM元素的映射，用于更新执行状态
@@ -826,7 +926,12 @@ function handleStreamEvent(event, progressElement, progressId,
             const d = event.data || {};
             const n = d.iteration != null ? d.iteration : 1;
             let iterTitle;
-            if (d.einoScope === 'main') {
+            if (d.orchestration === 'plan_execute' && d.einoScope === 'main') {
+                const phase = translatePlanExecuteAgentName(d.einoAgent != null ? d.einoAgent : '');
+                iterTitle = typeof window.t === 'function'
+                    ? window.t('chat.einoPlanExecuteRound', { n: n, phase: phase })
+                    : ('Plan-Execute · 第 ' + n + ' 轮 · ' + phase);
+            } else if (d.einoScope === 'main') {
                 iterTitle = typeof window.t === 'function'
                     ? window.t('chat.einoOrchestratorRound', { n: n })
                     : ('主代理 · 第 ' + n + ' 轮');
@@ -1202,8 +1307,13 @@ function handleStreamEvent(event, progressElement, progressId,
                 const progressEl = document.getElementById(progressId);
                 if (progressEl) {
                     progressEl.dataset.progressRawMessage = event.message || '';
+                    try {
+                        progressEl.dataset.progressRawData = event.data ? JSON.stringify(event.data) : '';
+                    } catch (e) {
+                        progressEl.dataset.progressRawData = '';
+                    }
                 }
-                const progressMsg = translateProgressMessage(event.message);
+                const progressMsg = translateProgressMessage(event.message, event.data);
                 progressTitle.textContent = '🔍 ' + progressMsg;
             }
             break;
@@ -1274,14 +1384,13 @@ function handleStreamEvent(event, progressElement, progressId,
 
             // 多代理模式下，迭代过程中的输出只显示在时间线中，不创建助手消息气泡
             // 创建时间线条目用于显示迭代过程中的输出
-            const agentPrefix = timelineAgentBracketPrefix(responseData);
-            const title = agentPrefix + '📝 ' + (typeof window.t === 'function' ? window.t('chat.planning') : '规划中');
+            const title = einoMainStreamPlanningTitle(responseData);
             const itemId = addTimelineItem(timeline, 'thinking', {
                 title: title,
                 message: ' ',
                 data: responseData
             });
-            responseStreamStateByProgressId.set(progressId, { itemId: itemId, buffer: '' });
+            responseStreamStateByProgressId.set(progressId, { itemId: itemId, buffer: '', streamMeta: responseData });
             break;
         }
 
@@ -1301,8 +1410,10 @@ function handleStreamEvent(event, progressElement, progressId,
             // 更新时间线条目内容
             let state = responseStreamStateByProgressId.get(progressId);
             if (!state) {
-                state = { itemId: null, buffer: '' };
+                state = { itemId: null, buffer: '', streamMeta: responseData };
                 responseStreamStateByProgressId.set(progressId, state);
+            } else if (!state.streamMeta && responseData && (responseData.einoAgent || responseData.orchestration)) {
+                state.streamMeta = responseData;
             }
 
             const deltaContent = event.message || '';
@@ -1314,10 +1425,12 @@ function handleStreamEvent(event, progressElement, progressId,
                 if (item) {
                     const contentEl = item.querySelector('.timeline-item-content');
                     if (contentEl) {
+                        const meta = state.streamMeta || responseData;
+                        const body = formatTimelineStreamBody(state.buffer, meta);
                         if (typeof formatMarkdown === 'function') {
-                            contentEl.innerHTML = formatMarkdown(state.buffer);
+                            contentEl.innerHTML = formatMarkdown(body);
                         } else {
-                            contentEl.textContent = state.buffer;
+                            contentEl.textContent = body;
                         }
                     }
                 }
@@ -1593,6 +1706,9 @@ function addTimelineItem(timeline, type, options) {
     if (options.data && options.data.einoAgent != null && String(options.data.einoAgent).trim() !== '') {
         item.dataset.einoAgent = String(options.data.einoAgent).trim();
     }
+    if (options.data && options.data.orchestration != null && String(options.data.orchestration).trim() !== '') {
+        item.dataset.orchestration = String(options.data.orchestration).trim();
+    }
 
     // 使用传入的createdAt时间，如果没有则使用当前时间（向后兼容）
     let eventTime;
@@ -1630,7 +1746,10 @@ function addTimelineItem(timeline, type, options) {
     
     // 根据类型添加详细内容
     if ((type === 'thinking' || type === 'planning') && options.message) {
-        content += `<div class="timeline-item-content">${formatMarkdown(options.message)}</div>`;
+        const streamBody = typeof formatTimelineStreamBody === 'function'
+            ? formatTimelineStreamBody(options.message, options.data)
+            : options.message;
+        content += `<div class="timeline-item-content">${formatMarkdown(streamBody)}</div>`;
     } else if (type === 'tool_call' && options.data) {
         const data = options.data;
         let args = data.argumentsObj;
@@ -2480,7 +2599,15 @@ function refreshProgressAndTimelineI18n() {
         const raw = msgEl.dataset.progressRawMessage;
         const titleEl = msgEl.querySelector('.progress-title');
         if (titleEl && raw) {
-            titleEl.textContent = '\uD83D\uDD0D ' + translateProgressMessage(raw);
+            let pdata = null;
+            if (msgEl.dataset.progressRawData) {
+                try {
+                    pdata = JSON.parse(msgEl.dataset.progressRawData);
+                } catch (e) {
+                    pdata = null;
+                }
+            }
+            titleEl.textContent = '\uD83D\uDD0D ' + translateProgressMessage(raw, pdata);
         }
     });
     // 转换后的详情区顶栏「渗透测试详情」：仅刷新不在 .progress-message 内的 progress 标题
@@ -2499,7 +2626,11 @@ function refreshProgressAndTimelineI18n() {
         if (type === 'iteration' && item.dataset.iterationN) {
             const n = parseInt(item.dataset.iterationN, 10) || 1;
             const scope = item.dataset.einoScope;
-            if (scope === 'main') {
+            if (item.dataset.orchestration === 'plan_execute' && scope === 'main') {
+                const phase = typeof translatePlanExecuteAgentName === 'function'
+                    ? translatePlanExecuteAgentName(item.dataset.einoAgent) : (item.dataset.einoAgent || '');
+                titleSpan.textContent = _t('chat.einoPlanExecuteRound', { n: n, phase: phase });
+            } else if (scope === 'main') {
                 titleSpan.textContent = _t('chat.einoOrchestratorRound', { n: n });
             } else if (scope === 'sub') {
                 const agent = item.dataset.einoAgent || '';
@@ -2508,9 +2639,23 @@ function refreshProgressAndTimelineI18n() {
                 titleSpan.textContent = ap + _t('chat.iterationRound', { n: n });
             }
         } else if (type === 'thinking') {
-            titleSpan.textContent = ap + '\uD83E\uDD14 ' + _t('chat.aiThinking');
+            if (item.dataset.orchestration === 'plan_execute' && item.dataset.einoAgent && typeof einoMainStreamPlanningTitle === 'function') {
+                titleSpan.textContent = einoMainStreamPlanningTitle({
+                    orchestration: 'plan_execute',
+                    einoAgent: item.dataset.einoAgent
+                });
+            } else {
+                titleSpan.textContent = ap + '\uD83E\uDD14 ' + _t('chat.aiThinking');
+            }
         } else if (type === 'planning') {
-            titleSpan.textContent = ap + '\uD83D\uDCDD ' + _t('chat.planning');
+            if (item.dataset.orchestration === 'plan_execute' && item.dataset.einoAgent && typeof einoMainStreamPlanningTitle === 'function') {
+                titleSpan.textContent = einoMainStreamPlanningTitle({
+                    orchestration: 'plan_execute',
+                    einoAgent: item.dataset.einoAgent
+                });
+            } else {
+                titleSpan.textContent = ap + '\uD83D\uDCDD ' + _t('chat.planning');
+            }
         } else if (type === 'tool_calls_detected' && item.dataset.toolCallsCount != null) {
             const count = parseInt(item.dataset.toolCallsCount, 10) || 0;
             titleSpan.textContent = ap + '\uD83D\uDD27 ' + _t('chat.toolCallsDetected', { count: count });

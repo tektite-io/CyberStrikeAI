@@ -586,7 +586,7 @@
                                 </div>
                                 <div id="agent-mode-wrapper" class="agent-mode-wrapper" style="display: none;">
                                     <div class="agent-mode-inner">
-                                        <button type="button" id="agent-mode-btn" class="role-selector-btn agent-mode-btn" onclick="toggleAgentModePanel()" data-i18n="chat.agentModeSelectAria" data-i18n-attr="aria-label,title" data-i18n-skip-text="true" aria-label="选择单代理或多代理" aria-haspopup="listbox" aria-expanded="false" title="选择单代理或多代理">
+                                        <button type="button" id="agent-mode-btn" class="role-selector-btn agent-mode-btn" onclick="toggleAgentModePanel()" data-i18n="chat.agentModeSelectAria" data-i18n-attr="aria-label,title" data-i18n-skip-text="true" aria-label="选择对话执行模式" aria-haspopup="listbox" aria-expanded="false" title="选择对话执行模式">
                                             <span id="agent-mode-icon" class="role-selector-icon" aria-hidden="true">🤖</span>
                                             <span id="agent-mode-text" class="role-selector-text">单代理</span>
                                             <svg class="role-selector-arrow" width="10" height="10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -603,26 +603,42 @@
                                                 </button>
                                             </div>
                                             <div class="agent-mode-options">
-                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="single" role="option" onclick="selectAgentMode('single')">
+                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="react" role="option" onclick="selectAgentMode('react')">
                                                     <div class="role-selection-item-icon-main" aria-hidden="true">🤖</div>
                                                     <div class="role-selection-item-content-main">
-                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModeSingle">单代理</div>
-                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModeSingleHint">单模型 ReAct 循环，适合常规对话与工具调用</div>
+                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModeReactNative">原生 ReAct 模式</div>
+                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModeReactNativeHint">经典单代理 ReAct 与 MCP 工具（/api/agent-loop）</div>
                                                     </div>
-                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="single">✓</div>
+                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="react">✓</div>
                                                 </button>
-                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="multi" role="option" onclick="selectAgentMode('multi')">
+                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="deep" role="option" onclick="selectAgentMode('deep')">
                                                     <div class="role-selection-item-icon-main" aria-hidden="true">🧩</div>
                                                     <div class="role-selection-item-content-main">
-                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModeMulti">多代理</div>
-                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModeMultiHint">Eino DeepAgent 编排子代理，适合复杂任务</div>
+                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModeDeep">Deep（DeepAgent）</div>
+                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModeDeepHint">Eino DeepAgent，task 调度子代理</div>
                                                     </div>
-                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="multi">✓</div>
+                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="deep">✓</div>
+                                                </button>
+                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="plan_execute" role="option" onclick="selectAgentMode('plan_execute')">
+                                                    <div class="role-selection-item-icon-main" aria-hidden="true">📋</div>
+                                                    <div class="role-selection-item-content-main">
+                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModePlanExecuteLabel">Plan-Execute</div>
+                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModePlanExecuteHint">规划 → 执行 → 重规划（单执行器工具链）</div>
+                                                    </div>
+                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="plan_execute">✓</div>
+                                                </button>
+                                                <button type="button" class="role-selection-item-main agent-mode-option" data-value="supervisor" role="option" onclick="selectAgentMode('supervisor')">
+                                                    <div class="role-selection-item-icon-main" aria-hidden="true">🎯</div>
+                                                    <div class="role-selection-item-content-main">
+                                                        <div class="role-selection-item-name-main" data-i18n="chat.agentModeSupervisorLabel">Supervisor</div>
+                                                        <div class="role-selection-item-description-main" data-i18n="chat.agentModeSupervisorHint">监督者协调，transfer 委派子代理</div>
+                                                    </div>
+                                                    <div class="role-selection-checkmark-main agent-mode-check" data-agent-mode-check="supervisor">✓</div>
                                                 </button>
                                             </div>
                                         </div>
                                     </div>
-                                    <input type="hidden" id="agent-mode-select" value="single" autocomplete="off">
+                                    <input type="hidden" id="agent-mode-select" value="react" autocomplete="off">
                                 </div>
                                 <div class="chat-input-with-files">
                                     <div id="chat-file-list" class="chat-file-list" aria-label="已选文件列表"></div>
@@ -1411,9 +1427,14 @@
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="multi-agent-enabled" class="modern-checkbox" />
                                                 <span class="checkbox-custom"></span>
-                                                <span class="checkbox-text" data-i18n="settingsBasic.enableMultiAgent">启用 Eino 多代理（DeepAgent）</span>
+                                                <span class="checkbox-text" data-i18n="settingsBasic.enableMultiAgent">启用 Eino 多代理</span>
                                             </label>
-                                            <small class="form-hint" data-i18n="settingsBasic.enableMultiAgentHint">开启后对话页可选「多代理」模式；子代理在 config.yaml 的 multi_agent.sub_agents 中配置。</small>
+                                            <small class="form-hint" data-i18n="settingsBasic.enableMultiAgentHint">开启后对话页可选「多代理」模式；子代理在 config.yaml 的 multi_agent.sub_agents 或 agents 目录中配置。</small>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="multi-agent-pe-loop" data-i18n="settingsBasic.multiAgentPeLoop">plan_execute 外层循环上限</label>
+                                            <input type="number" id="multi-agent-pe-loop" min="0" step="1" value="0" data-i18n="settingsBasic.multiAgentPeLoopPlaceholder" data-i18n-attr="placeholder" placeholder="0 表示 Eino 默认 10" />
+                                            <small class="form-hint" data-i18n="settingsBasic.multiAgentPeLoopHint">仅 orchestration=plan_execute 时有效；execute 与 replan 之间的最大轮次。</small>
                                         </div>
                                         <div class="form-group">
                                             <label for="multi-agent-default-mode" data-i18n="settingsBasic.multiAgentDefaultMode">对话页默认模式</label>
@@ -2408,9 +2429,11 @@
                     <label for="batch-queue-agent-mode" data-i18n="batchImportModal.agentMode">代理模式</label>
                     <select id="batch-queue-agent-mode" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 0.875rem;">
                         <option value="single" data-i18n="batchImportModal.agentModeSingle">单代理（ReAct）</option>
-                        <option value="multi" data-i18n="batchImportModal.agentModeMulti">多代理（Eino）</option>
+                        <option value="deep" data-i18n="chat.agentModeDeep">Deep（DeepAgent）</option>
+                        <option value="plan_execute" data-i18n="chat.agentModePlanExecuteLabel">Plan-Execute</option>
+                        <option value="supervisor" data-i18n="chat.agentModeSupervisorLabel">Supervisor</option>
                     </select>
-                    <div class="form-hint" style="margin-top: 4px;" data-i18n="batchImportModal.agentModeHint">建议默认单代理；复杂任务可使用多代理（需系统已启用多代理）。</div>
+                    <div class="form-hint" style="margin-top: 4px;" data-i18n="batchImportModal.agentModeHint">与对话页一致：原生 ReAct 或三种 Eino 编排（需已启用多代理）。</div>
                 </div>
                 <div class="form-group">
                     <label for="batch-queue-schedule-mode" data-i18n="batchImportModal.scheduleMode">调度方式</label>

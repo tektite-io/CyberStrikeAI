@@ -32,19 +32,77 @@ const CHAT_FILE_DEFAULT_PROMPT = '请根据上传的文件内容进行分析。'
 let chatAttachments = [];
 let chatAttachmentSeq = 0;
 
-// 多代理（Eino）：需后端 multi_agent.enabled，与单代理 /agent-loop 并存
+// 对话模式：react = 原生 ReAct（/agent-loop）；deep / plan_execute / supervisor = Eino（/api/multi-agent/stream，请求体 orchestration）
 const AGENT_MODE_STORAGE_KEY = 'cyberstrike-chat-agent-mode';
+const CHAT_AGENT_MODE_REACT = 'react';
+const CHAT_AGENT_EINO_MODES = ['deep', 'plan_execute', 'supervisor'];
 let multiAgentAPIEnabled = false;
+
+function normalizeOrchestrationClient(s) {
+    const v = String(s || '').trim().toLowerCase().replace(/-/g, '_');
+    if (v === 'plan_execute' || v === 'planexecute' || v === 'pe') return 'plan_execute';
+    if (v === 'supervisor' || v === 'super' || v === 'sv') return 'supervisor';
+    return 'deep';
+}
+
+function chatAgentModeIsEino(mode) {
+    return CHAT_AGENT_EINO_MODES.indexOf(mode) >= 0;
+}
+
+/** 将 localStorage / 历史值规范为 react | deep | plan_execute | supervisor */
+function chatAgentModeNormalizeStored(stored, cfg) {
+    const pub = cfg && cfg.multi_agent ? cfg.multi_agent : null;
+    const defOrch = 'deep';
+    let s = stored;
+    if (s === 'single') s = CHAT_AGENT_MODE_REACT;
+    if (s === 'multi') s = defOrch;
+    if (s === CHAT_AGENT_MODE_REACT || chatAgentModeIsEino(s)) return s;
+    const defMulti = pub && pub.default_mode === 'multi';
+    return defMulti ? defOrch : CHAT_AGENT_MODE_REACT;
+}
+
+if (typeof window !== 'undefined') {
+    window.csaiChatAgentMode = {
+        EINO_MODES: CHAT_AGENT_EINO_MODES,
+        REACT: CHAT_AGENT_MODE_REACT,
+        isEino: chatAgentModeIsEino,
+        normalizeStored: chatAgentModeNormalizeStored,
+        normalizeOrchestration: normalizeOrchestrationClient
+    };
+}
 
 function getAgentModeLabelForValue(mode) {
     if (typeof window.t === 'function') {
-        return mode === 'multi' ? window.t('chat.agentModeMulti') : window.t('chat.agentModeSingle');
+        switch (mode) {
+            case CHAT_AGENT_MODE_REACT:
+                return window.t('chat.agentModeReactNative');
+            case 'deep':
+                return window.t('chat.agentModeDeep');
+            case 'plan_execute':
+                return window.t('chat.agentModePlanExecuteLabel');
+            case 'supervisor':
+                return window.t('chat.agentModeSupervisorLabel');
+            default:
+                return mode;
+        }
     }
-    return mode === 'multi' ? '多代理' : '单代理';
+    switch (mode) {
+        case CHAT_AGENT_MODE_REACT: return '原生 ReAct';
+        case 'deep': return 'Deep';
+        case 'plan_execute': return 'Plan-Execute';
+        case 'supervisor': return 'Supervisor';
+        default: return mode;
+    }
 }
 
 function getAgentModeIconForValue(mode) {
-    return mode === 'multi' ? '🧩' : '🤖';
+    switch (mode) {
+        case CHAT_AGENT_MODE_REACT: return '🤖';
+        case 'deep': return '🧩';
+        case 'plan_execute': return '📋';
+        case 'supervisor': return '🎯';
+        default: return '🤖';
+    }
 }
 
 function syncAgentModeFromValue(value) {
@@ -88,7 +146,8 @@ function toggleAgentModePanel() {
 }
 
 function selectAgentMode(mode) {
-    if (mode !== 'single' && mode !== 'multi') return;
+    const ok = mode === CHAT_AGENT_MODE_REACT || chatAgentModeIsEino(mode);
+    if (!ok) return;
     try {
         localStorage.setItem(AGENT_MODE_STORAGE_KEY, mode);
     } catch (e) { /* ignore */ }
@@ -113,11 +172,11 @@ async function initChatAgentModeFromConfig() {
             return;
         }
         wrap.style.display = '';
-        const def = (cfg.multi_agent && cfg.multi_agent.default_mode === 'multi') ? 'multi' : 'single';
         let stored = localStorage.getItem(AGENT_MODE_STORAGE_KEY);
-        if (stored !== 'single' && stored !== 'multi') {
-            stored = def;
-        }
+        stored = chatAgentModeNormalizeStored(stored, cfg);
+        try {
+            localStorage.setItem(AGENT_MODE_STORAGE_KEY, stored);
+        } catch (e) { /* ignore */ }
         sel.value = stored;
         syncAgentModeFromValue(stored);
     } catch (e) {
@@ -129,7 +188,7 @@ document.addEventListener('languagechange', function () {
     const hid = document.getElementById('agent-mode-select');
     if (!hid) return;
     const v = hid.value;
-    if (v === 'single' || v === 'multi') {
+    if (v === CHAT_AGENT_MODE_REACT || chatAgentModeIsEino(v)) {
         syncAgentModeFromValue(v);
     }
 });
@@ -322,8 +381,12 @@ async function sendMessage() {
     
     try {
         const modeSel = document.getElementById('agent-mode-select');
-        const useMulti = multiAgentAPIEnabled && modeSel && modeSel.value === 'multi';
+        const modeVal = modeSel ? modeSel.value : CHAT_AGENT_MODE_REACT;
+        const useMulti = multiAgentAPIEnabled && chatAgentModeIsEino(modeVal);
         const streamPath = useMulti ? '/api/multi-agent/stream' : '/api/agent-loop/stream';
+        if (useMulti && modeVal) {
+            body.orchestration = modeVal;
+        }
         const response = await apiFetch(streamPath, {
             method: 'POST',
             headers: {
@@ -1741,12 +1804,33 @@ function renderProcessDetails(messageId, processDetails) {
         // 根据事件类型渲染不同的内容
         let itemTitle = title;
         if (eventType === 'iteration') {
-            itemTitle = agPx + (typeof window.t === 'function' ? window.t('chat.iterationRound', { n: data.iteration || 1 }) : '第 ' + (data.iteration || 1) + ' 轮迭代');
+            const n = data.iteration || 1;
+            if (data.orchestration === 'plan_execute' && data.einoScope === 'main') {
+                const phase = typeof window.translatePlanExecuteAgentName === 'function'
+                    ? window.translatePlanExecuteAgentName(data.einoAgent) : (data.einoAgent || '');
+                itemTitle = (typeof window.t === 'function'
+                    ? window.t('chat.einoPlanExecuteRound', { n: n, phase: phase })
+                    : ('Plan-Execute · 第 ' + n + ' 轮 · ' + phase));
+            } else if (data.einoScope === 'main') {
+                itemTitle = agPx + (typeof window.t === 'function'
+                    ? window.t('chat.einoOrchestratorRound', { n: n })
+                    : ('主代理 · 第 ' + n + ' 轮'));
+            } else if (data.einoScope === 'sub') {
+                const agent = data.einoAgent != null ? String(data.einoAgent).trim() : '';
+                itemTitle = agPx + (typeof window.t === 'function'
+                    ? window.t('chat.einoSubAgentStep', { n: n, agent: agent })
+                    : ('子代理 · ' + agent + ' · 第 ' + n + ' 步'));
+            } else {
+                itemTitle = agPx + (typeof window.t === 'function' ? window.t('chat.iterationRound', { n: n }) : '第 ' + n + ' 轮迭代');
+            }
         } else if (eventType === 'thinking') {
             itemTitle = agPx + '🤔 ' + (typeof window.t === 'function' ? window.t('chat.aiThinking') : 'AI思考');
         } else if (eventType === 'planning') {
-            // 与流式 monitor.js 中 response_start/response_delta 展示的「规划中」一致（落库聚合）
-            itemTitle = agPx + '📝 ' + (typeof window.t === 'function' ? window.t('chat.planning') : '规划中');
+            if (typeof window.einoMainStreamPlanningTitle === 'function') {
+                itemTitle = window.einoMainStreamPlanningTitle(data);
+            } else {
+                itemTitle = agPx + '📝 ' + (typeof window.t === 'function' ? window.t('chat.planning') : '规划中');
+            }
         } else if (eventType === 'tool_calls_detected') {
             itemTitle = agPx + '🔧 ' + (typeof window.t === 'function' ? window.t('chat.toolCallsDetected', { count: data.count || 0 }) : '检测到 ' + (data.count || 0) + ' 个工具调用');
         } else if (eventType === 'tool_call') {

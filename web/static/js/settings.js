@@ -129,6 +129,11 @@ async function loadConfig(loadTools = true) {
         const ma = currentConfig.multi_agent || {};
         const maEn = document.getElementById('multi-agent-enabled');
         if (maEn) maEn.checked = ma.enabled === true;
+        const maPeLoop = document.getElementById('multi-agent-pe-loop');
+        if (maPeLoop) {
+            const v = ma.plan_execute_loop_max_iterations;
+            maPeLoop.value = (v !== undefined && v !== null && !Number.isNaN(Number(v))) ? String(Number(v)) : '0';
+        }
         const maMode = document.getElementById('multi-agent-default-mode');
         if (maMode) maMode.value = (ma.default_mode === 'multi') ? 'multi' : 'single';
         const maRobot = document.getElementById('multi-agent-robot-use');
@@ -891,12 +896,18 @@ async function applySettings() {
             agent: {
                 max_iterations: parseInt(document.getElementById('agent-max-iterations').value) || 30
             },
-            multi_agent: {
-                enabled: document.getElementById('multi-agent-enabled')?.checked === true,
-                default_mode: document.getElementById('multi-agent-default-mode')?.value === 'multi' ? 'multi' : 'single',
-                robot_use_multi_agent: document.getElementById('multi-agent-robot-use')?.checked === true,
-                batch_use_multi_agent: false
-            },
+            multi_agent: (function () {
+                const peRaw = document.getElementById('multi-agent-pe-loop')?.value;
+                const peParsed = parseInt(peRaw, 10);
+                const peLoop = Number.isNaN(peParsed) ? 0 : Math.max(0, peParsed);
+                return {
+                    enabled: document.getElementById('multi-agent-enabled')?.checked === true,
+                    default_mode: document.getElementById('multi-agent-default-mode')?.value === 'multi' ? 'multi' : 'single',
+                    robot_use_multi_agent: document.getElementById('multi-agent-robot-use')?.checked === true,
+                    batch_use_multi_agent: false,
+                    plan_execute_loop_max_iterations: peLoop
+                };
+            })(),
             knowledge: knowledgeConfig,
             robots: {
                 wecom: {
@@ -1024,6 +1035,13 @@ async function applySettings() {
             ? window.t('settings.apply.applySuccess')
             : '配置已成功应用！';
         alert(successMsg);
+        try {
+            if (typeof initChatAgentModeFromConfig === 'function') {
+                await initChatAgentModeFromConfig();
+            }
+        } catch (e) {
+            console.warn('initChatAgentModeFromConfig after settings', e);
+        }
         closeSettings();
     } catch (error) {
         console.error('应用配置失败:', error);

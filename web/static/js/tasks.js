@@ -14,6 +14,16 @@ function _tPlain(key, opts) {
     });
 }
 
+/** 批量队列 agentMode 展示文案（与对话模式命名一致） */
+function batchQueueAgentModeLabel(mode) {
+    const m = String(mode || 'single').toLowerCase();
+    if (m === 'single') return _t('batchImportModal.agentModeSingle');
+    if (m === 'multi' || m === 'deep') return _t('chat.agentModeDeep');
+    if (m === 'plan_execute') return _t('chat.agentModePlanExecuteLabel');
+    if (m === 'supervisor') return _t('chat.agentModeSupervisorLabel');
+    return _t('batchImportModal.agentModeSingle');
+}
+
 /** Cron 队列在「本轮 completed」等状态下的展示文案（底层 status 不变，仅 UI 强调循环调度） */
 function getBatchQueueStatusPresentation(queue) {
     const map = {
@@ -929,7 +939,8 @@ async function createBatchQueue() {
     
     // 获取角色（可选，空字符串表示默认角色）
     const role = roleSelect ? roleSelect.value || '' : '';
-    const agentMode = agentModeSelect ? (agentModeSelect.value === 'multi' ? 'multi' : 'single') : 'single';
+    const rawMode = agentModeSelect ? agentModeSelect.value : 'single';
+    const agentMode = ['single', 'deep', 'plan_execute', 'supervisor'].indexOf(rawMode) >= 0 ? rawMode : 'single';
     const scheduleMode = scheduleModeSelect ? (scheduleModeSelect.value === 'cron' ? 'cron' : 'manual') : 'manual';
     const cronExpr = cronExprInput ? cronExprInput.value.trim() : '';
     const executeNow = executeNowCheckbox ? !!executeNowCheckbox.checked : false;
@@ -1123,7 +1134,7 @@ function renderBatchQueues() {
         const cardMod = isCronCycleIdle ? ' batch-queue-item--cron-wait' : '';
         const progressFillMod = isCronCycleIdle ? ' batch-queue-progress-fill--cron-wait' : '';
 
-        const agentLabel = queue.agentMode === 'multi' ? _t('batchImportModal.agentModeMulti') : _t('batchImportModal.agentModeSingle');
+        const agentLabel = batchQueueAgentModeLabel(queue.agentMode);
         let scheduleLabel = queue.scheduleMode === 'cron' ? _t('batchImportModal.scheduleModeCron') : _t('batchImportModal.scheduleModeManual');
         if (queue.scheduleMode === 'cron' && queue.cronExpr) {
             scheduleLabel += ` (${queue.cronExpr})`;
@@ -1356,7 +1367,7 @@ async function showBatchQueueDetail(queueId) {
         } else {
             roleLineVal = '\uD83D\uDD35 ' + escapeHtml(_t('batchQueueDetailModal.defaultRole'));
         }
-        const agentModeText = queue.agentMode === 'multi' ? _t('batchImportModal.agentModeMulti') : _t('batchImportModal.agentModeSingle');
+        const agentModeText = batchQueueAgentModeLabel(queue.agentMode);
         const scheduleModeText = queue.scheduleMode === 'cron' ? _t('batchImportModal.scheduleModeCron') : _t('batchImportModal.scheduleModeManual');
         const scheduleDetail = escapeHtml(scheduleModeText) + (queue.scheduleMode === 'cron' && queue.cronExpr ? `（${escapeHtml(queue.cronExpr)}）` : '');
         const showProgressNoteInModal = !!(pres.progressNote && !pres.callout);
@@ -2125,11 +2136,15 @@ function startInlineEditAgentMode() {
     if (!queueId) return;
     apiFetch(`/api/batch-tasks/${queueId}`).then(r => r.json()).then(detail => {
         const queue = detail.queue;
-        const currentMode = queue.agentMode || 'single';
+        let currentMode = (queue.agentMode || 'single').toLowerCase();
+        if (currentMode === 'multi') currentMode = 'deep';
+        if (['single', 'deep', 'plan_execute', 'supervisor'].indexOf(currentMode) < 0) currentMode = 'single';
         container.innerHTML = `<span class="bq-inline-edit-controls">
             <select id="bq-edit-agentmode">
-                <option value="single" ${currentMode !== 'multi' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.agentModeSingle'))}</option>
-                <option value="multi" ${currentMode === 'multi' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.agentModeMulti'))}</option>
+                <option value="single" ${currentMode === 'single' ? 'selected' : ''}>${escapeHtml(_t('batchImportModal.agentModeSingle'))}</option>
+                <option value="deep" ${currentMode === 'deep' ? 'selected' : ''}>${escapeHtml(_t('chat.agentModeDeep'))}</option>
+                <option value="plan_execute" ${currentMode === 'plan_execute' ? 'selected' : ''}>${escapeHtml(_t('chat.agentModePlanExecuteLabel'))}</option>
+                <option value="supervisor" ${currentMode === 'supervisor' ? 'selected' : ''}>${escapeHtml(_t('chat.agentModeSupervisorLabel'))}</option>
             </select>
         </span>`;
         const sel = document.getElementById('bq-edit-agentmode');
@@ -2150,7 +2165,8 @@ async function saveInlineAgentMode() {
     const queueId = batchQueuesState.currentQueueId;
     if (!queueId) { _bqInlineSaving = false; return; }
     const sel = document.getElementById('bq-edit-agentmode');
-    const agentMode = sel ? sel.value : 'single';
+    const raw = sel ? sel.value : 'single';
+    const agentMode = ['single', 'deep', 'plan_execute', 'supervisor'].indexOf(raw) >= 0 ? raw : 'single';
     try {
         const detailResp = await apiFetch(`/api/batch-tasks/${queueId}`);
         const detail = await detailResp.json();
