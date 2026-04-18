@@ -398,6 +398,8 @@ func RunDeepAgent(
 			ToolsCfg:             mainToolsCfg,
 			ExecMaxIter:          deepMaxIter,
 			LoopMaxIter:          ma.PlanExecuteLoopMaxIterations,
+			AppCfg:               appCfg,
+			Logger:               logger,
 		})
 		if perr != nil {
 			return nil, perr
