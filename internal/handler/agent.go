@@ -494,8 +494,7 @@ func (h *AgentHandler) AgentLoop(c *gin.Context) {
 
 	// 应用角色用户提示词和工具配置
 	finalMessage := req.Message
-	var roleTools []string  // 角色配置的工具列表
-	var roleSkills []string // 角色配置的skills列表（用于提示AI，但不硬编码内容）
+	var roleTools []string // 角色配置的工具列表
 
 	// WebShell AI 助手模式：绑定当前连接，仅开放 webshell_* 工具并注入 connection_id
 	if req.WebShellConnectionID != "" {
@@ -531,7 +530,6 @@ func (h *AgentHandler) AgentLoop(c *gin.Context) {
 			builtin.ToolListKnowledgeRiskTypes,
 			builtin.ToolSearchKnowledgeBase,
 		}
-		roleSkills = nil
 	} else if req.Role != "" && req.Role != "默认" {
 		if h.config.Roles != nil {
 			if role, exists := h.config.Roles[req.Role]; exists && role.Enabled {
@@ -544,11 +542,6 @@ func (h *AgentHandler) AgentLoop(c *gin.Context) {
 				if len(role.Tools) > 0 {
 					roleTools = role.Tools
 					h.logger.Info("使用角色配置的工具列表", zap.String("role", req.Role), zap.Int("toolCount", len(roleTools)))
-				}
-				// 获取角色配置的skills列表（用于在系统提示词中提示AI，但不硬编码内容）
-				if len(role.Skills) > 0 {
-					roleSkills = role.Skills
-					h.logger.Info("角色配置了skills，将在系统提示词中提示AI", zap.String("role", req.Role), zap.Int("skillCount", len(roleSkills)), zap.Strings("skills", roleSkills))
 				}
 			}
 		}
@@ -574,8 +567,7 @@ func (h *AgentHandler) AgentLoop(c *gin.Context) {
 	}
 
 	// 执行Agent Loop，传入历史消息和对话ID（使用包含角色提示词的finalMessage和角色工具列表）
-	// 注意：skills不会硬编码注入，但会在系统提示词中提示AI这个角色推荐使用哪些skills
-	result, err := h.agent.AgentLoopWithProgress(c.Request.Context(), finalMessage, agentHistoryMessages, conversationID, nil, roleTools, roleSkills)
+	result, err := h.agent.AgentLoopWithProgress(c.Request.Context(), finalMessage, agentHistoryMessages, conversationID, nil, roleTools)
 	if err != nil {
 		h.logger.Error("Agent Loop执行失败", zap.Error(err))
 
@@ -646,14 +638,13 @@ func (h *AgentHandler) ProcessMessageForRobot(ctx context.Context, conversationI
 	}
 
 	finalMessage := message
-	var roleTools, roleSkills []string
+	var roleTools []string
 	if role != "" && role != "默认" && h.config.Roles != nil {
 		if r, exists := h.config.Roles[role]; exists && r.Enabled {
 			if r.UserPrompt != "" {
 				finalMessage = r.UserPrompt + "\n\n" + message
 			}
 			roleTools = r.Tools
-			roleSkills = r.Skills
 		}
 	}
 
@@ -720,7 +711,7 @@ func (h *AgentHandler) ProcessMessageForRobot(ctx context.Context, conversationI
 		return resultMA.Response, conversationID, nil
 	}
 
-	result, err := h.agent.AgentLoopWithProgress(ctx, finalMessage, agentHistoryMessages, conversationID, progressCallback, roleTools, roleSkills)
+	result, err := h.agent.AgentLoopWithProgress(ctx, finalMessage, agentHistoryMessages, conversationID, progressCallback, roleTools)
 	if err != nil {
 		errMsg := "执行失败: " + err.Error()
 		if assistantMessageID != "" {
@@ -1263,7 +1254,6 @@ func (h *AgentHandler) AgentLoopStream(c *gin.Context) {
 	// 应用角色用户提示词和工具配置
 	finalMessage := req.Message
 	var roleTools []string // 角色配置的工具列表
-	var roleSkills []string
 	if req.WebShellConnectionID != "" {
 		conn, errConn := h.db.GetWebshellConnection(strings.TrimSpace(req.WebShellConnectionID))
 		if errConn != nil || conn == nil {
@@ -1313,11 +1303,6 @@ func (h *AgentHandler) AgentLoopStream(c *gin.Context) {
 					// 向后兼容：如果只有mcps字段，暂时使用空列表（表示使用所有工具）
 					// 因为mcps是MCP服务器名称，不是工具列表
 					h.logger.Info("角色配置使用旧的mcps字段，将使用所有工具", zap.String("role", req.Role))
-				}
-				// 注意：角色 skills 仅在系统提示词中提示；运行时加载请使用 Eino 多代理内置 `skill` 工具
-				if len(role.Skills) > 0 {
-					roleSkills = role.Skills
-					h.logger.Info("角色配置了skills，AI可通过工具按需调用", zap.String("role", req.Role), zap.Int("skillCount", len(role.Skills)), zap.Strings("skills", role.Skills))
 				}
 			}
 		}
@@ -1423,12 +1408,11 @@ func (h *AgentHandler) AgentLoopStream(c *gin.Context) {
 
 	// 执行Agent Loop，传入独立的上下文，确保任务不会因客户端断开而中断（使用包含角色提示词的finalMessage和角色工具列表）
 	sendEvent("progress", "正在分析您的请求...", nil)
-	// 注意：roleSkills 已在上方根据 req.Role 或 WebShell 模式设置
 	stopKeepalive := make(chan struct{})
 	go sseKeepalive(c, stopKeepalive, &sseWriteMu)
 	defer close(stopKeepalive)
 
-	result, err := h.agent.AgentLoopWithProgress(taskCtx, finalMessage, agentHistoryMessages, conversationID, progressCallback, roleTools, roleSkills)
+	result, err := h.agent.AgentLoopWithProgress(taskCtx, finalMessage, agentHistoryMessages, conversationID, progressCallback, roleTools)
 	if err != nil {
 		h.logger.Error("Agent Loop执行失败", zap.Error(err))
 		cause := context.Cause(baseCtx)
@@ -2242,8 +2226,7 @@ func (h *AgentHandler) executeBatchQueue(queueID string) {
 
 		// 应用角色用户提示词和工具配置
 		finalMessage := task.Message
-		var roleTools []string  // 角色配置的工具列表
-		var roleSkills []string // 角色配置的skills列表（用于提示AI，但不硬编码内容）
+		var roleTools []string // 角色配置的工具列表
 		if queue.Role != "" && queue.Role != "默认" {
 			if h.config.Roles != nil {
 				if role, exists := h.config.Roles[queue.Role]; exists && role.Enabled {
@@ -2256,11 +2239,6 @@ func (h *AgentHandler) executeBatchQueue(queueID string) {
 					if len(role.Tools) > 0 {
 						roleTools = role.Tools
 						h.logger.Info("使用角色配置的工具列表", zap.String("queueId", queueID), zap.String("taskId", task.ID), zap.String("role", queue.Role), zap.Int("toolCount", len(roleTools)))
-					}
-					// 获取角色配置的skills列表（用于在系统提示词中提示AI，但不硬编码内容）
-					if len(role.Skills) > 0 {
-						roleSkills = role.Skills
-						h.logger.Info("角色配置了skills，将在系统提示词中提示AI", zap.String("queueId", queueID), zap.String("taskId", task.ID), zap.String("role", queue.Role), zap.Int("skillCount", len(roleSkills)), zap.Strings("skills", roleSkills))
 					}
 				}
 			}
@@ -2295,7 +2273,6 @@ func (h *AgentHandler) executeBatchQueue(queueID string) {
 		// 存储取消函数，以便在取消队列时能够取消当前任务
 		h.batchTaskManager.SetTaskCancel(queueID, cancel)
 		// 使用队列配置的角色工具列表（如果为空，表示使用所有工具）
-		// 注意：skills不会硬编码注入，但会在系统提示词中提示AI这个角色推荐使用哪些skills
 		useBatchMulti := false
 		useEinoSingle := false
 		batchOrch := "deep"
@@ -2326,10 +2303,10 @@ func (h *AgentHandler) executeBatchQueue(queueID string) {
 			if h.config == nil {
 				runErr = fmt.Errorf("服务器配置未加载")
 			} else {
-				resultMA, runErr = multiagent.RunEinoSingleChatModelAgent(ctx, h.config, &h.config.MultiAgent, h.agent, h.logger, conversationID, finalMessage, []agent.ChatMessage{}, roleTools, roleSkills, progressCallback)
+				resultMA, runErr = multiagent.RunEinoSingleChatModelAgent(ctx, h.config, &h.config.MultiAgent, h.agent, h.logger, conversationID, finalMessage, []agent.ChatMessage{}, roleTools, progressCallback)
 			}
 		default:
-			result, runErr = h.agent.AgentLoopWithProgress(ctx, finalMessage, []agent.ChatMessage{}, conversationID, progressCallback, roleTools, roleSkills)
+			result, runErr = h.agent.AgentLoopWithProgress(ctx, finalMessage, []agent.ChatMessage{}, conversationID, progressCallback, roleTools)
 		}
 		// 任务执行完成，清理取消函数
 		h.batchTaskManager.SetTaskCancel(queueID, nil)

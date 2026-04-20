@@ -151,7 +151,6 @@ func (h *AgentHandler) EinoSingleAgentLoopStream(c *gin.Context) {
 		prep.FinalMessage,
 		prep.History,
 		prep.RoleTools,
-		prep.RoleSkills,
 		progressCallback,
 	)
 
@@ -255,7 +254,6 @@ func (h *AgentHandler) EinoSingleAgentLoop(c *gin.Context) {
 		prep.FinalMessage,
 		prep.History,
 		prep.RoleTools,
-		prep.RoleSkills,
 		progressCallback,
 	)
 	if runErr != nil {

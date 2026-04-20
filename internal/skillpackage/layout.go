@@ -33,12 +33,12 @@ func SkillsRootFromConfig(skillsDir string, configPath string) string {
 	return skillsDir
 }
 
-// DirLister satisfies handler.SkillsManager for role UI (lists package directory names).
+// DirLister lists skill package directory names under SkillsRoot.
 type DirLister struct {
 	SkillsRoot string
 }
 
-// ListSkills implements the role handler dependency.
+// ListSkills returns skill package directory names that contain SKILL.md.
 func (d DirLister) ListSkills() ([]string, error) {
 	return ListSkillDirNames(d.SkillsRoot)
 }

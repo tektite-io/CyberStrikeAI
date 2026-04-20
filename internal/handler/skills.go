@@ -308,31 +308,10 @@ func (h *SkillsHandler) GetSkillBoundRoles(c *gin.Context) {
 	})
 }
 
-// getRolesBoundToSkill 获取绑定指定skill的角色列表（不修改配置）
+// getRolesBoundToSkill 预留：角色不再配置 skill 绑定，始终返回空列表。
 func (h *SkillsHandler) getRolesBoundToSkill(skillName string) []string {
-	if h.config.Roles == nil {
-		return []string{}
-	}
-
-	boundRoles := make([]string, 0)
-	for roleName, role := range h.config.Roles {
-		// 确保角色名称正确设置
-		if role.Name == "" {
-			role.Name = roleName
-		}
-
-		// 检查角色的Skills列表中是否包含该skill
-		if len(role.Skills) > 0 {
-			for _, skill := range role.Skills {
-				if skill == skillName {
-					boundRoles = append(boundRoles, roleName)
-					break
-				}
-			}
-		}
-	}
-
-	return boundRoles
+	_ = skillName
+	return nil
 }
 
 // CreateSkill 创建新 skill（标准 Agent Skills：生成 SKILL.md + YAML front matter）
@@ -600,55 +579,10 @@ func (h *SkillsHandler) ClearSkillStatsByName(c *gin.Context) {
 	})
 }
 
-// removeSkillFromRoles 从所有角色中移除指定的skill绑定
-// 返回受影响角色名称列表
+// removeSkillFromRoles 预留：角色不再存储 skill 绑定，无操作。
 func (h *SkillsHandler) removeSkillFromRoles(skillName string) []string {
-	if h.config.Roles == nil {
-		return []string{}
-	}
-
-	affectedRoles := make([]string, 0)
-	rolesToUpdate := make(map[string]config.RoleConfig)
-
-	// 遍历所有角色，查找并移除skill绑定
-	for roleName, role := range h.config.Roles {
-		// 确保角色名称正确设置
-		if role.Name == "" {
-			role.Name = roleName
-		}
-
-		// 检查角色的Skills列表中是否包含要删除的skill
-		if len(role.Skills) > 0 {
-			updated := false
-			newSkills := make([]string, 0, len(role.Skills))
-			for _, skill := range role.Skills {
-				if skill != skillName {
-					newSkills = append(newSkills, skill)
-				} else {
-					updated = true
-				}
-			}
-			if updated {
-				role.Skills = newSkills
-				rolesToUpdate[roleName] = role
-				affectedRoles = append(affectedRoles, roleName)
-			}
-		}
-	}
-
-	// 如果有角色需要更新，保存到文件
-	if len(rolesToUpdate) > 0 {
-		// 更新内存中的配置
-		for roleName, role := range rolesToUpdate {
-			h.config.Roles[roleName] = role
-		}
-		// 保存更新后的角色配置到文件
-		if err := h.saveRolesConfig(); err != nil {
-			h.logger.Error("保存角色配置失败", zap.Error(err))
-		}
-	}
-
-	return affectedRoles
+	_ = skillName
+	return nil
 }
 
 // saveRolesConfig 保存角色配置到文件（从SkillsHandler调用）

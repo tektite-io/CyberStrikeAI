@@ -648,13 +648,6 @@ func (h *OpenAPIHandler) GetOpenAPISpec(c *gin.Context) {
 								"type": "string",
 							},
 						},
-						"skills": map[string]interface{}{
-							"type":        "array",
-							"description": "Skills列表",
-							"items": map[string]interface{}{
-								"type": "string",
-							},
-						},
 					},
 				},
 				"Skill": map[string]interface{}{
@@ -2872,38 +2865,6 @@ func (h *OpenAPIHandler) GetOpenAPISpec(c *gin.Context) {
 						},
 						"404": map[string]interface{}{
 							"description": "角色不存在",
-						},
-						"401": map[string]interface{}{
-							"description": "未授权",
-						},
-					},
-				},
-			},
-			"/api/roles/skills/list": map[string]interface{}{
-				"get": map[string]interface{}{
-					"tags":        []string{"角色管理"},
-					"summary":     "获取可用Skills列表",
-					"description": "获取所有可用的Skills列表，用于角色配置",
-					"operationId": "getSkills",
-					"responses": map[string]interface{}{
-						"200": map[string]interface{}{
-							"description": "获取成功",
-							"content": map[string]interface{}{
-								"application/json": map[string]interface{}{
-									"schema": map[string]interface{}{
-										"type": "object",
-										"properties": map[string]interface{}{
-											"skills": map[string]interface{}{
-												"type":        "array",
-												"description": "Skills列表",
-												"items": map[string]interface{}{
-													"type": "string",
-												},
-											},
-										},
-									},
-								},
-							},
 						},
 						"401": map[string]interface{}{
 							"description": "未授权",

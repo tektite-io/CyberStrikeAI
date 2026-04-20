@@ -18,7 +18,6 @@ type multiAgentPrepared struct {
 	History            []agent.ChatMessage
 	FinalMessage       string
 	RoleTools          []string
-	RoleSkills         []string
 	AssistantMessageID string
 	UserMessageID      string
 }
@@ -68,7 +67,6 @@ func (h *AgentHandler) prepareMultiAgentSession(req *ChatRequest) (*multiAgentPr
 
 	finalMessage := req.Message
 	var roleTools []string
-	var roleSkills []string
 	if req.WebShellConnectionID != "" {
 		conn, errConn := h.db.GetWebshellConnection(strings.TrimSpace(req.WebShellConnectionID))
 		if errConn != nil || conn == nil {
@@ -107,7 +105,6 @@ func (h *AgentHandler) prepareMultiAgentSession(req *ChatRequest) (*multiAgentPr
 				finalMessage = role.UserPrompt + "\n\n" + req.Message
 			}
 			roleTools = role.Tools
-			roleSkills = role.Skills
 		}
 	}
 
@@ -146,7 +143,6 @@ func (h *AgentHandler) prepareMultiAgentSession(req *ChatRequest) (*multiAgentPr
 		History:            agentHistoryMessages,
 		FinalMessage:       finalMessage,
 		RoleTools:          roleTools,
-		RoleSkills:         roleSkills,
 		AssistantMessageID: assistantMessageID,
 		UserMessageID:      userMessageID,
 	}, nil

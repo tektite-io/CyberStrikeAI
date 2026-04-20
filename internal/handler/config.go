@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -305,6 +306,8 @@ func (h *ConfigHandler) GetTools(c *gin.Context) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 
+	c.Header("Cache-Control", "no-store, no-cache, must-revalidate")
+
 	// 解析分页参数
 	page := 1
 	pageSize := 20
@@ -326,15 +329,26 @@ func (h *ConfigHandler) GetTools(c *gin.Context) {
 		searchTermLower = strings.ToLower(searchTerm)
 	}
 
-	// 解析状态筛选参数: "true" = 仅已启用, "false" = 仅已停用, "" = 全部
-	enabledFilter := c.Query("enabled")
+	// 解析状态筛选: tool_filter=on|off（角色弹窗等优先，避免与网关/代理对 enabled 的特殊处理冲突）
+	// 兼容旧参数 enabled=true|false
 	var filterEnabled *bool
-	if enabledFilter == "true" {
+	toolFilter := strings.TrimSpace(strings.ToLower(c.Query("tool_filter")))
+	switch toolFilter {
+	case "on", "1", "true", "enabled":
 		v := true
 		filterEnabled = &v
-	} else if enabledFilter == "false" {
+	case "off", "0", "false", "disabled":
 		v := false
 		filterEnabled = &v
+	default:
+		enabledFilter := strings.TrimSpace(c.Query("enabled"))
+		if enabledFilter == "true" {
+			v := true
+			filterEnabled = &v
+		} else if enabledFilter == "false" {
+			v := false
+			filterEnabled = &v
+		}
 	}
 
 	// 解析角色参数，用于过滤工具并标注启用状态
@@ -520,6 +534,17 @@ func (h *ConfigHandler) GetTools(c *gin.Context) {
 	// 如果角色配置了工具列表，过滤工具（只保留列表中的工具，但保留其他工具并标记为禁用）
 	// 注意：这里我们不直接过滤掉工具，而是保留所有工具，但通过 role_enabled 字段标注状态
 	// 这样前端可以显示所有工具，并标注哪些工具在当前角色中可用
+
+	// 统一按名称排序后再分页，避免配置文件中顺序导致「全部」与「仅已启用」前几页看起来完全一致
+	sort.SliceStable(allTools, func(i, j int) bool {
+		key := func(t ToolConfigInfo) string {
+			if t.IsExternal && t.ExternalMCP != "" {
+				return strings.ToLower(t.ExternalMCP + "::" + t.Name)
+			}
+			return strings.ToLower(t.Name)
+		}
+		return key(allTools[i]) < key(allTools[j])
+	})
 
 	total := len(allTools)
 	// 统计已启用的工具数（在角色中的启用工具数）

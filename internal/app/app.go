@@ -327,7 +327,6 @@ func New(cfg *config.Config, log *logger.Logger) (*App, error) {
 	configHandler := handler.NewConfigHandler(configPath, cfg, mcpServer, executor, agent, attackChainHandler, externalMCPMgr, log.Logger)
 	externalMCPHandler := handler.NewExternalMCPHandler(externalMCPMgr, cfg, configPath, log.Logger)
 	roleHandler := handler.NewRoleHandler(cfg, configPath, log.Logger)
-	roleHandler.SetSkillsManager(skillpackage.DirLister{SkillsRoot: skillsDir})
 	skillsHandler := handler.NewSkillsHandler(cfg, configPath, log.Logger)
 	fofaHandler := handler.NewFofaHandler(cfg, log.Logger)
 	terminalHandler := handler.NewTerminalHandler(log.Logger)
@@ -881,7 +880,6 @@ func setupRoutes(
 		// 角色管理
 		protected.GET("/roles", roleHandler.GetRoles)
 		protected.GET("/roles/:name", roleHandler.GetRole)
-		protected.GET("/roles/skills/list", roleHandler.GetSkills)
 		protected.POST("/roles", roleHandler.CreateRole)
 		protected.PUT("/roles/:name", roleHandler.UpdateRole)
 		protected.DELETE("/roles/:name", roleHandler.DeleteRole)

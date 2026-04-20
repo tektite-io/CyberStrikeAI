@@ -316,16 +316,16 @@ type ProgressCallback func(eventType, message string, data interface{})
 
 // AgentLoop 执行Agent循环
 func (a *Agent) AgentLoop(ctx context.Context, userInput string, historyMessages []ChatMessage) (*AgentLoopResult, error) {
-	return a.AgentLoopWithProgress(ctx, userInput, historyMessages, "", nil, nil, nil)
+	return a.AgentLoopWithProgress(ctx, userInput, historyMessages, "", nil, nil)
 }
 
 // AgentLoopWithConversationID 执行Agent循环（带对话ID）
 func (a *Agent) AgentLoopWithConversationID(ctx context.Context, userInput string, historyMessages []ChatMessage, conversationID string) (*AgentLoopResult, error) {
-	return a.AgentLoopWithProgress(ctx, userInput, historyMessages, conversationID, nil, nil, nil)
+	return a.AgentLoopWithProgress(ctx, userInput, historyMessages, conversationID, nil, nil)
 }
 
-// EinoSingleAgentSystemInstruction 供 Eino adk.ChatModelAgent.Instruction 使用，与 AgentLoopWithProgress 首条 system 对齐（含 system_prompt_path 与 Skills 提示）。
-func (a *Agent) EinoSingleAgentSystemInstruction(roleSkills []string) string {
+// EinoSingleAgentSystemInstruction 供 Eino adk.ChatModelAgent.Instruction 使用，与 AgentLoopWithProgress 首条 system 对齐（含 system_prompt_path）。
+func (a *Agent) EinoSingleAgentSystemInstruction() string {
 	systemPrompt := DefaultSingleAgentSystemPrompt()
 	if a.agentConfig != nil {
 		if p := strings.TrimSpace(a.agentConfig.SystemPromptPath); p != "" {
@@ -343,30 +343,11 @@ func (a *Agent) EinoSingleAgentSystemInstruction(roleSkills []string) string {
 			}
 		}
 	}
-	if len(roleSkills) > 0 {
-		var skillsHint strings.Builder
-		skillsHint.WriteString("\n\n本角色推荐使用的Skills：\n")
-		for i, skillName := range roleSkills {
-			if i > 0 {
-				skillsHint.WriteString("、")
-			}
-			skillsHint.WriteString("`")
-			skillsHint.WriteString(skillName)
-			skillsHint.WriteString("`")
-		}
-		skillsHint.WriteString("\n- 这些名称与 skills/ 下 SKILL.md 的 `name` 一致。")
-		skillsHint.WriteString("\n- 若当前会话已启用 Eino 内置 `skill` 工具，请按需加载；否则以 MCP 与文本工作流完成。")
-		skillsHint.WriteString("\n- 例如传入 skill 参数为 `")
-		skillsHint.WriteString(roleSkills[0])
-		skillsHint.WriteString("`")
-		systemPrompt += skillsHint.String()
-	}
 	return systemPrompt
 }
 
 // AgentLoopWithProgress 执行Agent循环（带进度回调和对话ID）
-// roleSkills: 角色配置的skills列表（用于在系统提示词中提示AI，但不硬编码内容）
-func (a *Agent) AgentLoopWithProgress(ctx context.Context, userInput string, historyMessages []ChatMessage, conversationID string, callback ProgressCallback, roleTools []string, roleSkills []string) (*AgentLoopResult, error) {
+func (a *Agent) AgentLoopWithProgress(ctx context.Context, userInput string, historyMessages []ChatMessage, conversationID string, callback ProgressCallback, roleTools []string) (*AgentLoopResult, error) {
 	// 设置当前对话ID
 	a.mu.Lock()
 	a.currentConversationID = conversationID
@@ -394,26 +375,6 @@ func (a *Agent) AgentLoopWithProgress(ctx context.Context, userInput string, his
 				systemPrompt = s
 			}
 		}
-	}
-
-	// 如果角色配置了skills，在系统提示词中提示AI（但不硬编码内容）
-	if len(roleSkills) > 0 {
-		var skillsHint strings.Builder
-		skillsHint.WriteString("\n\n本角色推荐使用的Skills：\n")
-		for i, skillName := range roleSkills {
-			if i > 0 {
-				skillsHint.WriteString("、")
-			}
-			skillsHint.WriteString("`")
-			skillsHint.WriteString(skillName)
-			skillsHint.WriteString("`")
-		}
-		skillsHint.WriteString("\n- 这些名称与 skills/ 下 SKILL.md 的 `name` 一致；在 **Eino 多代理** 会话中请用内置 `skill` 工具按需加载全文")
-		skillsHint.WriteString("\n- 例如：在支持 Eino skill 工具时传入 skill 参数为 `")
-		skillsHint.WriteString(roleSkills[0])
-		skillsHint.WriteString("`")
-		skillsHint.WriteString("\n- 单代理 MCP 模式不会注入 skill 工具；需要时请使用多代理（DeepAgent）")
-		systemPrompt += skillsHint.String()
 	}
 
 	messages := []ChatMessage{

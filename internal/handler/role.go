@@ -18,15 +18,9 @@ import (
 
 // RoleHandler 角色处理器
 type RoleHandler struct {
-	config        *config.Config
-	configPath    string
-	logger        *zap.Logger
-	skillsManager SkillsManager // Skills管理器接口（可选）
-}
-
-// SkillsManager Skills管理器接口
-type SkillsManager interface {
-	ListSkills() ([]string, error)
+	config     *config.Config
+	configPath string
+	logger     *zap.Logger
 }
 
 // NewRoleHandler 创建新的角色处理器
@@ -36,34 +30,6 @@ func NewRoleHandler(cfg *config.Config, configPath string, logger *zap.Logger) *
 		configPath: configPath,
 		logger:     logger,
 	}
-}
-
-// SetSkillsManager 设置Skills管理器
-func (h *RoleHandler) SetSkillsManager(manager SkillsManager) {
-	h.skillsManager = manager
-}
-
-// GetSkills 获取所有可用的skills列表
-func (h *RoleHandler) GetSkills(c *gin.Context) {
-	if h.skillsManager == nil {
-		c.JSON(http.StatusOK, gin.H{
-			"skills": []string{},
-		})
-		return
-	}
-
-	skills, err := h.skillsManager.ListSkills()
-	if err != nil {
-		h.logger.Warn("获取skills列表失败", zap.Error(err))
-		c.JSON(http.StatusOK, gin.H{
-			"skills": []string{},
-		})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"skills": skills,
-	})
 }
 
 // GetRoles 获取所有角色
