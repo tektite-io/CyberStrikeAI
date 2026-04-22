@@ -37,21 +37,15 @@ func main() {
 		fmt.Printf("  URL: %s\n", srv.URL)
 		fmt.Printf("  Description: %s\n", srv.Description)
 		fmt.Printf("  Timeout: %d seconds\n", srv.Timeout)
-		fmt.Printf("  Enabled: %v\n", srv.Enabled)
-		fmt.Printf("  Disabled: %v\n", srv.Disabled)
+		fmt.Printf("  ExternalMCPEnable: %v\n", srv.ExternalMCPEnable)
 		fmt.Println()
 	}
 }
 
 func getTransport(srv config.ExternalMCPServerConfig) string {
-	if srv.Transport != "" {
-		return srv.Transport
+	t := srv.GetTransportType()
+	if t == "" {
+		return "unknown"
 	}
-	if srv.Command != "" {
-		return "stdio"
-	}
-	if srv.URL != "" {
-		return "http"
-	}
-	return "unknown"
+	return t
 }

@@ -52,8 +52,7 @@ func main() {
 		}
 		fmt.Printf("  Description: %s\n", srv.Description)
 		fmt.Printf("  Timeout: %d seconds\n", srv.Timeout)
-		fmt.Printf("  Enabled: %v\n", srv.Enabled)
-		fmt.Printf("  Disabled: %v\n", srv.Disabled)
+		fmt.Printf("  ExternalMCPEnable: %v\n", srv.ExternalMCPEnable)
 	}
 
 	// 获取统计信息
@@ -67,7 +66,7 @@ func main() {
 	// 测试启动（仅测试启用的）
 	fmt.Println("\n=== 测试启动 ===")
 	for name, srv := range cfg.ExternalMCP.Servers {
-		if srv.Enabled && !srv.Disabled {
+		if srv.ExternalMCPEnable {
 			fmt.Printf("\n尝试启动 %s...\n", name)
 			// 注意：实际启动可能会失败，因为需要真实的MCP服务器
 			err := manager.StartClient(name)
@@ -131,15 +130,10 @@ func main() {
 }
 
 func getTransport(srv config.ExternalMCPServerConfig) string {
-	if srv.Transport != "" {
-		return srv.Transport
+	t := srv.GetTransportType()
+	if t == "" {
+		return "unknown"
 	}
-	if srv.Command != "" {
-		return "stdio"
-	}
-	if srv.URL != "" {
-		return "http"
-	}
-	return "unknown"
+	return t
 }
 
