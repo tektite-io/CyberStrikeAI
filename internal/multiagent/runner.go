@@ -205,6 +205,9 @@ func RunDeepAgent(
 			if instr == "" {
 				instr = "你是 CyberStrikeAI 中的专业子代理，在授权渗透测试场景下协助完成用户委托的子任务。优先使用可用工具获取证据，回答简洁专业。"
 			}
+			if supplement := buildUserContextForSubAgent(userMessage, history, ma.SubAgentUserContextMaxRunes); supplement != "" {
+				instr += supplement
+			}
 
 			roleTools := sub.RoleTools
 			bind := strings.TrimSpace(sub.BindRole)

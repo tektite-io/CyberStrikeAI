@@ -54,6 +54,9 @@ type MultiAgentConfig struct {
 	// OrchestratorInstructionSupervisor supervisor 主代理系统提示（transfer/exit 说明仍由运行追加）；非空且 agents/orchestrator-supervisor.md 正文为空或未存在时生效。
 	OrchestratorInstructionSupervisor string `yaml:"orchestrator_instruction_supervisor,omitempty" json:"orchestrator_instruction_supervisor,omitempty"`
 	SubAgents                    []MultiAgentSubConfig `yaml:"sub_agents" json:"sub_agents"`
+	// SubAgentUserContextMaxRunes caps the user-context supplement injected into sub-agent instructions.
+	// 0 (default) uses the built-in default of 2000 runes; negative value disables injection entirely.
+	SubAgentUserContextMaxRunes int `yaml:"sub_agent_user_context_max_runes,omitempty" json:"sub_agent_user_context_max_runes,omitempty"`
 	// EinoSkills configures CloudWeGo Eino ADK skill middleware + optional local filesystem/execute on DeepAgent.
 	EinoSkills MultiAgentEinoSkillsConfig `yaml:"eino_skills,omitempty" json:"eino_skills,omitempty"`
 	// EinoMiddleware wires optional ADK middleware (patchtoolcalls, toolsearch, plantask, reduction) and Deep extras.
