@@ -2881,17 +2881,6 @@ function runWebshellAiSend(conn, inputEl, sendBtn, messagesContainer) {
                     } else if (_et === 'warning') {
                         appendTimelineItem('warning', '⚠️ ' + (_em || ''), '', _ed);
 
-                    // ─── Eino recovery ───
-                    } else if (_et === 'eino_recovery') {
-                        var runIdx = _ed.runIndex != null ? _ed.runIndex : (_ed.einoRetry != null ? _ed.einoRetry + 1 : 1);
-                        var maxRuns = _ed.maxRuns != null ? _ed.maxRuns : 3;
-                        var recTitle = wsTOr('chat.einoRecoveryTitle', '') ||
-                            ('🔄 工具参数无效 · 第 ' + runIdx + '/' + maxRuns + ' 轮（已追加提示）');
-                        if (typeof window.t === 'function') {
-                            try { recTitle = window.t('chat.einoRecoveryTitle', { n: runIdx, max: maxRuns }); } catch (e) { /* */ }
-                        }
-                        appendTimelineItem('eino_recovery', recTitle, _em, _ed);
-
                     // ─── Tool calls ───
                     } else if (_et === 'tool_calls_detected' && _ed) {
                         var count = _ed.count || 0;

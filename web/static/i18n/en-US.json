@@ -178,7 +178,6 @@
     "taskCancelled": "Task cancelled",
     "unknownTool": "Unknown tool",
     "einoAgentReplyTitle": "Sub-agent reply",
-    "einoRecoveryTitle": "🔄 Invalid tool JSON · run {{n}}/{{max}} (hint appended)",
     "einoStreamErrorTitle": "⚠️ Eino stream interrupted ({{agent}})",
     "einoStreamErrorMessage": "Streaming read failed; the system will retry or terminate according to policy.",
     "iterationLimitReachedTitle": "⛔ Iteration limit reached",

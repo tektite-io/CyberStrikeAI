@@ -178,7 +178,6 @@
     "taskCancelled": "任务已取消",
     "unknownTool": "未知工具",
     "einoAgentReplyTitle": "子代理回复",
-    "einoRecoveryTitle": "🔄 工具参数无效 · 第 {{n}}/{{max}} 轮（已追加提示）",
     "einoStreamErrorTitle": "⚠️ Eino 流式中断（{{agent}}）",
     "einoStreamErrorMessage": "流式读取异常，系统将按策略重试或结束。",
     "iterationLimitReachedTitle": "⛔ 达到迭代上限",

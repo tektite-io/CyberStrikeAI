@@ -2226,10 +2226,6 @@ function renderProcessDetails(messageId, processDetails) {
             itemTitle = agPx + execLine;
         } else if (eventType === 'eino_agent_reply') {
             itemTitle = agPx + '💬 ' + (typeof window.t === 'function' ? window.t('chat.einoAgentReplyTitle') : '子代理回复');
-        } else if (eventType === 'eino_recovery') {
-            const ri = data.runIndex != null ? data.runIndex : (data.einoRetry != null ? data.einoRetry + 1 : 1);
-            const mx = data.maxRuns != null ? data.maxRuns : 3;
-            itemTitle = (typeof window.t === 'function' ? window.t('chat.einoRecoveryTitle', { n: ri, max: mx }) : ('🔄 第 ' + ri + '/' + mx + ' 轮（已追加提示）'));
         } else if (eventType === 'knowledge_retrieval') {
             itemTitle = '📚 ' + (typeof window.t === 'function' ? window.t('chat.knowledgeRetrieval') : '知识检索');
         } else if (eventType === 'error') {

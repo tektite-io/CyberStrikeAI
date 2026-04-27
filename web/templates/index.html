@@ -1098,6 +1098,18 @@
                                     <input type="text" id="vulnerability-conversation-filter" data-i18n="vulnerabilityPage.filterConversation" data-i18n-attr="placeholder" placeholder="筛选特定会话" />
                                 </label>
                                 <label>
+                                    <span>任务ID/队列ID</span>
+                                    <input type="text" id="vulnerability-task-filter" placeholder="筛选任务ID或队列ID" />
+                                </label>
+                                <label>
+                                    <span>对话标签</span>
+                                    <input type="text" id="vulnerability-conversation-tag-filter" placeholder="筛选对话标签" />
+                                </label>
+                                <label>
+                                    <span>任务标签</span>
+                                    <input type="text" id="vulnerability-task-tag-filter" placeholder="筛选任务标签" />
+                                </label>
+                                <label>
                                     <span data-i18n="vulnerabilityPage.severity">严重程度</span>
                                     <select id="vulnerability-severity-filter">
                                         <option value="" data-i18n="knowledgePage.all">全部</option>
@@ -1120,6 +1132,7 @@
                                 </label>
                                 <button class="btn-secondary" onclick="filterVulnerabilities()" data-i18n="vulnerabilityPage.filter">筛选</button>
                                 <button class="btn-secondary" onclick="clearVulnerabilityFilters()" data-i18n="vulnerabilityPage.clear">清除</button>
+                                <button class="btn-primary" onclick="exportVulnerabilityReports()">导出报告</button>
                             </div>
                         </div>
 
@@ -2598,6 +2611,14 @@
                 <div class="form-group">
                     <label for="vulnerability-conversation-id"><span data-i18n="vulnerabilityModal.conversationId">会话ID</span> <span style="color: red;">*</span></label>
                     <input type="text" id="vulnerability-conversation-id" data-i18n="vulnerabilityModal.conversationIdPlaceholder" data-i18n-attr="placeholder" placeholder="输入会话ID" required />
+                </div>
+                <div class="form-group">
+                    <label for="vulnerability-conversation-tag">对话标签</label>
+                    <input type="text" id="vulnerability-conversation-tag" placeholder="如：红队演练A、客户A周报" />
+                </div>
+                <div class="form-group">
+                    <label for="vulnerability-task-tag">任务标签</label>
+                    <input type="text" id="vulnerability-task-tag" placeholder="如：批量扫描Q2、专项复测" />
                 </div>
                 <div class="form-group">
                     <label for="vulnerability-title"><span data-i18n="vulnerabilityModal.title">标题</span> <span style="color: red;">*</span></label>

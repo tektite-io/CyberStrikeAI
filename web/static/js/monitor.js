@@ -1133,24 +1133,6 @@ function handleStreamEvent(event, progressElement, progressId,
             });
             break;
 
-        case 'eino_recovery': {
-            const d = event.data || {};
-            const runIdx = d.runIndex != null ? d.runIndex : (d.einoRetry != null ? d.einoRetry + 1 : 1);
-            const maxRuns = d.maxRuns != null ? d.maxRuns : 3;
-            const title = typeof window.t === 'function'
-                ? window.t('chat.einoRecoveryTitle', { n: runIdx, max: maxRuns })
-                : ('🔄 工具参数无效 · 第 ' + runIdx + '/' + maxRuns + ' 轮（已追加提示）');
-            addTimelineItem(timeline, 'eino_recovery', {
-                title: title,
-                message: event.message || '',
-                data: event.data
-            });
-            // If the backend triggers a recovery run, any "running" tool_call items in this progress
-            // should be closed to avoid being stuck forever.
-            finalizeOutstandingToolCallsForProgress(progressId, 'failed');
-            break;
-        }
-
         case 'eino_stream_error': {
             const d = event.data || {};
             const agent = d.einoAgent ? String(d.einoAgent) : '';
@@ -2190,15 +2172,6 @@ function addTimelineItem(timeline, type, options) {
     if (type === 'progress' && options.message) {
         item.dataset.progressMessage = options.message;
     }
-    if (type === 'eino_recovery' && options.data) {
-        const d = options.data;
-        if (d.runIndex != null) {
-            item.dataset.recoveryRunIndex = String(d.runIndex);
-        }
-        if (d.maxRuns != null) {
-            item.dataset.recoveryMaxRuns = String(d.maxRuns);
-        }
-    }
     if (type === 'tool_calls_detected' && options.data && options.data.count != null) {
         item.dataset.toolCallsCount = String(options.data.count);
     }
@@ -2307,12 +2280,6 @@ function addTimelineItem(timeline, type, options) {
                     <pre class="tool-result">${escapeHtml(resultStr)}</pre>
                     ${data.executionId ? `<div class="tool-execution-id"><span data-i18n="timeline.executionId">${escapeHtml(execIdLabel)}</span> <code>${escapeHtml(data.executionId)}</code></div>` : ''}
                 </div>
-            </div>
-        `;
-    } else if (type === 'eino_recovery' && options.message) {
-        content += `
-            <div class="timeline-item-content timeline-eino-recovery">
-                ${escapeHtml(options.message).replace(/\n/g, '<br>')}
             </div>
         `;
     } else if (type === 'cancelled') {
@@ -3197,10 +3164,6 @@ function refreshProgressAndTimelineI18n() {
             titleSpan.textContent = ap + icon + (success ? _t('chat.toolExecComplete', { name: name }) : _t('chat.toolExecFailed', { name: name }));
         } else if (type === 'eino_agent_reply') {
             titleSpan.textContent = ap + '\uD83D\uDCAC ' + _t('chat.einoAgentReplyTitle');
-        } else if (type === 'eino_recovery' && item.dataset.recoveryRunIndex) {
-            const n = parseInt(item.dataset.recoveryRunIndex, 10) || 1;
-            const mx = parseInt(item.dataset.recoveryMaxRuns, 10) || 3;
-            titleSpan.textContent = _t('chat.einoRecoveryTitle', { n: n, max: mx });
         } else if (type === 'cancelled') {
             titleSpan.textContent = '\u26D4 ' + _t('chat.taskCancelled');
         } else if (type === 'progress' && item.dataset.progressMessage !== undefined) {
