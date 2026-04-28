@@ -17,6 +17,7 @@ import (
 	"cyberstrike-ai/internal/config"
 	"cyberstrike-ai/internal/knowledge"
 	"cyberstrike-ai/internal/mcp"
+	"cyberstrike-ai/internal/mcp/builtin"
 	"cyberstrike-ai/internal/openai"
 	"cyberstrike-ai/internal/security"
 
@@ -270,6 +271,11 @@ func (h *ConfigHandler) GetConfig(c *gin.Context) {
 		SubAgentCount:                subAgentCount,
 		Orchestration:                config.NormalizeMultiAgentOrchestration(h.config.MultiAgent.Orchestration),
 		PlanExecuteLoopMaxIterations: h.config.MultiAgent.PlanExecuteLoopMaxIterations,
+		ToolSearchAlwaysVisibleTools: append([]string(nil), h.config.MultiAgent.EinoMiddleware.ToolSearchAlwaysVisibleTools...),
+		ToolSearchAlwaysVisibleEffectiveTools: mergeToolNameLists(
+			h.config.MultiAgent.EinoMiddleware.ToolSearchAlwaysVisibleTools,
+			builtin.GetAllBuiltinTools(),
+		),
 	}
 
 	c.JSON(http.StatusOK, GetConfigResponse{
@@ -678,11 +684,13 @@ func (h *ConfigHandler) UpdateConfig(c *gin.Context) {
 		if req.MultiAgent.PlanExecuteLoopMaxIterations != nil {
 			h.config.MultiAgent.PlanExecuteLoopMaxIterations = *req.MultiAgent.PlanExecuteLoopMaxIterations
 		}
+		h.config.MultiAgent.EinoMiddleware.ToolSearchAlwaysVisibleTools = dedupeToolNameList(req.MultiAgent.ToolSearchAlwaysVisibleTools)
 		h.logger.Info("更新多代理配置",
 			zap.Bool("enabled", h.config.MultiAgent.Enabled),
 			zap.Bool("robot_use_multi_agent", h.config.MultiAgent.RobotUseMultiAgent),
 			zap.Bool("batch_use_multi_agent", h.config.MultiAgent.BatchUseMultiAgent),
 			zap.Int("plan_execute_loop_max_iterations", h.config.MultiAgent.PlanExecuteLoopMaxIterations),
+			zap.Int("tool_search_always_visible_tools", len(h.config.MultiAgent.EinoMiddleware.ToolSearchAlwaysVisibleTools)),
 		)
 	}
 
@@ -1373,6 +1381,33 @@ func updateMultiAgentConfig(doc *yaml.Node, cfg config.MultiAgentConfig) {
 	setBoolInMap(maNode, "robot_use_multi_agent", cfg.RobotUseMultiAgent)
 	setBoolInMap(maNode, "batch_use_multi_agent", cfg.BatchUseMultiAgent)
 	setIntInMap(maNode, "plan_execute_loop_max_iterations", cfg.PlanExecuteLoopMaxIterations)
+	mwNode := ensureMap(maNode, "eino_middleware")
+	setFlowStringSliceInMap(mwNode, "tool_search_always_visible_tools", dedupeToolNameList(cfg.EinoMiddleware.ToolSearchAlwaysVisibleTools))
+}
+
+func dedupeToolNameList(in []string) []string {
+	if len(in) == 0 {
+		return []string{}
+	}
+	seen := make(map[string]struct{}, len(in))
+	out := make([]string, 0, len(in))
+	for _, name := range in {
+		n := strings.TrimSpace(name)
+		if n == "" {
+			continue
+		}
+		key := strings.ToLower(n)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, n)
+	}
+	return out
+}
+
+func mergeToolNameLists(a, b []string) []string {
+	return dedupeToolNameList(append(append([]string{}, a...), b...))
 }
 
 func ensureMap(parent *yaml.Node, path ...string) *yaml.Node {
