@@ -662,8 +662,8 @@ function getHitlPendingCount(res) {
 
 // 「最近事件」内联展示：取通知摘要里最重要的前 N 条
 // 设计原则：
-//   - 不重复 alert banner / KPI 已经表达过的信息（漏洞、HITL 等会被过滤掉避免冗余）
-//   - 只显示 p0/p1 优先级，p2 作为兜底（当 p0/p1 不够时）
+//   - 不重复 alert banner / KPI 已表达的「新漏洞」通知（vulnerability_created 仍过滤）
+//   - HITL 待审批在推荐操作等处也会提示，但仍在此展示时间线，便于与任务完成等并列查看
 //   - 整个 section 在没有可显示内容时整个隐藏，避免空模块占地方
 function renderRecentEvents(notifRes) {
     var section = document.getElementById('dashboard-section-events');
@@ -671,8 +671,8 @@ function renderRecentEvents(notifRes) {
     if (!section || !listEl) return;
 
     var items = (notifRes && Array.isArray(notifRes.items)) ? notifRes.items : [];
-    // 过滤：只看有意义的事件，去掉 actionable 已处理的、以及类型已经在仪表盘其他位置覆盖的
-    var coveredTypes = { 'vulnerability_created': true, 'hitl_pending': true };
+    // 过滤：去掉新漏洞类型（与「最近漏洞」等板块避免重复）；HITL 不再过滤
+    var coveredTypes = { 'vulnerability_created': true };
     var filtered = items.filter(function (it) {
         if (!it || !it.type) return false;
         if (coveredTypes[it.type]) return false;
@@ -685,8 +685,8 @@ function renderRecentEvents(notifRes) {
         var la = levelOrder[a.level] != null ? levelOrder[a.level] : 9;
         var lb = levelOrder[b.level] != null ? levelOrder[b.level] : 9;
         if (la !== lb) return la - lb;
-        var ta = a.createdAt || a.created_at || 0;
-        var tb = b.createdAt || b.created_at || 0;
+        var ta = a.ts || a.createdAt || a.created_at || 0;
+        var tb = b.ts || b.createdAt || b.created_at || 0;
         return new Date(tb).getTime() - new Date(ta).getTime();
     });
 
@@ -701,8 +701,9 @@ function renderRecentEvents(notifRes) {
     listEl.innerHTML = top.map(function (it) {
         var level = it.level || 'p2';
         var title = esc(it.title || it.message || dt('dashboard.eventUntitled', null, '事件'));
-        var msg = esc(it.message || it.summary || '');
-        var when = esc(timeAgoStr(it.createdAt || it.created_at));
+        var msg = esc(it.message || it.summary || it.desc || '');
+        var whenRaw = timeAgoStr(it.ts || it.createdAt || it.created_at);
+        var when = esc(whenRaw || '—');
         return (
             '<div class="dashboard-event-item lvl-' + esc(level) + '">' +
             '<span class="dashboard-event-dot" aria-hidden="true"></span>' +
@@ -784,7 +785,7 @@ function renderRecommendedActions(state) {
         actions.push({
             level: 'setup',
             icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-            title: dt('dashboard.recoStartScan', null, '开始第一次扫描'),
+            title: dt('dashboard.recoStartScan', null, '在对话中发起扫描'),
             desc: dt('dashboard.recoStartScanDesc', null, '在对话中描述目标，让 AI 协助执行'),
             page: 'chat'
         });
@@ -972,8 +973,8 @@ function renderRecentVulns(res) {
                 '<span class="dashboard-empty-icon" aria-hidden="true">' +
                 '<svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>' +
                 '</span>' +
-                '<div class="dashboard-empty-title">' + esc(dt('dashboard.noVulnYet', null, '暂无漏洞')) + '</div>' +
-                '<div class="dashboard-empty-desc">' + esc(dt('dashboard.noVulnDesc', null, '系统目前安全，开始一次扫描可以发现潜在问题')) + '</div>' +
+                '<div class="dashboard-empty-title">' + esc(dt('dashboard.noVulnYet', null, '暂无最近漏洞')) + '</div>' +
+                '<div class="dashboard-empty-desc">' + esc(dt('dashboard.noVulnDesc', null, '此处展示近期漏洞记录；在对话中完成检测后，新结果会出现在这里')) + '</div>' +
                 '<button type="button" class="dashboard-empty-action" data-action="scan">' +
                 esc(dt('dashboard.startScanBtn', null, '前往对话发起扫描')) + ' →</button>'
             );

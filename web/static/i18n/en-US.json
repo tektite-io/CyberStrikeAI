@@ -125,7 +125,7 @@
     "lastUpdated": "Last updated",
     "viewAll": "View all →",
     "recentVulns": "Recent vulnerabilities",
-    "noVulnYet": "No vulnerabilities yet — start your first scan",
+    "noVulnYet": "No recent vulnerabilities",
     "capabilities": "Capabilities",
     "mcpTools": "MCP tools",
     "rolesLabel": "Roles",
@@ -184,7 +184,7 @@
     "recoCheckMonitorDesc": "View failed request details in MCP monitor",
     "recoSetupMcp": "Configure your first MCP tool",
     "recoSetupMcpDesc": "Install MCP server before Agent can invoke specific capabilities",
-    "recoStartScan": "Start your first scan",
+    "recoStartScan": "Start a scan from chat",
     "recoStartScanDesc": "Describe your target in chat, AI will help execute",
     "recentEvents": "Recent Events",
     "eventUntitled": "Event",
@@ -193,7 +193,7 @@
     "mcpPartialDown_one": "{{count}} stopped",
     "mcpPartialDown_other": "{{count}} stopped",
     "mcpAllDown": "All stopped",
-    "noVulnDesc": "System looks safe — start a scan to discover potential issues",
+    "noVulnDesc": "This list shows recent records; new results appear here when detection completes in chat",
     "startScanBtn": "Go to chat to scan"
   },
   "chat": {

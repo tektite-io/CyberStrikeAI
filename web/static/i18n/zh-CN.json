@@ -125,7 +125,7 @@
     "lastUpdated": "上次更新",
     "viewAll": "查看全部 →",
     "recentVulns": "最近漏洞",
-    "noVulnYet": "暂无漏洞，开始你的第一次扫描吧",
+    "noVulnYet": "暂无最近漏洞",
     "capabilities": "能力总览",
     "mcpTools": "MCP 工具",
     "rolesLabel": "角色",
@@ -174,7 +174,7 @@
     "recoCheckMonitorDesc": "在 MCP 监控中查看失败的请求详情",
     "recoSetupMcp": "配置首个 MCP 工具",
     "recoSetupMcpDesc": "安装 MCP 服务后 Agent 才能调用具体能力",
-    "recoStartScan": "开始第一次扫描",
+    "recoStartScan": "在对话中发起扫描",
     "recoStartScanDesc": "在对话中描述目标，让 AI 协助执行",
     "recentEvents": "最近事件",
     "eventUntitled": "事件",
@@ -182,7 +182,7 @@
     "mcpAllRunning": "全部运行",
     "mcpPartialDown": "{{count}} 个未运行",
     "mcpAllDown": "全部未运行",
-    "noVulnDesc": "系统目前安全，开始一次扫描可以发现潜在问题",
+    "noVulnDesc": "此处展示近期漏洞记录；在对话中完成检测后，新结果会出现在这里",
     "startScanBtn": "前往对话发起扫描"
   },
   "chat": {

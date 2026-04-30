@@ -9289,6 +9289,7 @@ header {
     margin-bottom: 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
 }
@@ -13231,6 +13232,9 @@ header {
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
     flex-shrink: 0;
+    justify-self: end;
+    text-align: right;
+    min-width: 3.5rem;
 }
 
 /* External MCP 健康度：能力总览中专门一行的 N/N + 状态徽章 */
